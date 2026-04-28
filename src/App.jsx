@@ -358,274 +358,286 @@ function ResultBox({res,from,to,val}){
   );
 }
 
-// ── MODO TALLER — Calculadora profesional ────────────────────
-// Flujo: número → unidad (confirma) → número → unidad → fracción → =
-// Ej: 6 → [ft] → 5 → [in] → [+1/16 x3] → [=]
-// Ej: 3 → [/] → 16 → [in] para fracción manual
+// ── MODO TALLER — Calculadora de construcción completa ───────
+// Flujo: dígitos → ft|in|/ → operación +−×÷ → más medidas → =
+// Todo en pantalla fija, sin scroll, sin teclado del sistema
 function WorkshopMode(){
-  const[buf,    setBuf]  = useState("");  // buffer activo (dígitos)
-  const[ftVal,  setFtVal]= useState(0);   // pies confirmados
-  const[inVal,  setInVal]= useState(0);   // pulgadas enteras confirmadas
-  const[fracN,  setFracN]= useState(0);   // numerador fracción acumulada (16avos)
-  const[slashOn,setSlash]= useState(false);// modo fracción manual: num/den
-  const[fracDen,setFracDen]=useState("");  // denominador manual
-  const[fracNum,setFracNum]=useState("");  // numerador manual
-  const[to,     setTo]   = useState("mm");
-  const[entered, setEntered]=useState(false); // si ya se presionó = al menos una vez
+  // ── Estado ────────────────────────────────────────────────
+  const[buf,    setBuf]   = useState("");   // dígitos activos
+  const[ftAcc,  setFtAcc] = useState(0);   // pies del número actual
+  const[inAcc,  setInAcc] = useState(0);   // pulgadas del número actual
+  const[fracN,  setFracN] = useState(0);   // 16avos del número actual
+  const[slashOn,setSlash] = useState(false);
+  const[fracNum,setFracNum]= useState("");
+  const[fracDen,setFracDen]= useState("");
+  const[memory, setMemory] = useState(0);  // acumulador de operaciones
+  const[op,     setOp]    = useState(null);// operación pendiente: + - × ÷
+  const[tape,   setTape]  = useState([]);  // historial de cinta
+  const[to,     setTo]    = useState("mm");
+  const[justEq, setJustEq]= useState(false);// acabamos de presionar =
 
-  // ── Dígito ─────────────────────────────────────────────────
-  function digit(d){
-    if(slashOn){
-      setFracDen(v=>(v+d).replace(/^0+/,"")||d);
-    } else {
-      setBuf(v=>{
-        if(v==="0") return d;
-        return (v+d).slice(0,6);
-      });
+  // ── Valor del número actual en pulgadas ──────────────────
+  const currentIn = ftAcc*12 + inAcc + fracN/16;
+
+  // ── Display del número actual ────────────────────────────
+  function numDisplay(){
+    if(slashOn) return fracNum+(fracDen?`/${fracDen}`:"/_");
+    if(buf) return buf;
+    const parts=[];
+    if(ftAcc>0) parts.push(`${ftAcc}ft`);
+    if(inAcc>0||fracN>0){
+      let s=inAcc>0?`${inAcc}`:"";
+      if(fracN>0){const g=gcd(fracN,16);s+=(s?" ":"")+`${fracN/g}/${16/g}"`;}
+      else s+='"';
+      parts.push(s);
     }
+    return parts.length?parts.join(" "):"0";
   }
 
-  // ── Confirmar pies ──────────────────────────────────────────
+  // ── Display de la cinta (historial) ──────────────────────
+  function tapeDisplay(){
+    if(!tape.length&&!op) return numDisplay();
+    let s=tape.map(t=>`${t.label} ${t.op}`).join(" ");
+    if(op) s+=" "+numDisplay();
+    return s||numDisplay();
+  }
+
+  // ── Resultado acumulado ───────────────────────────────────
+  function calcResult(){
+    if(!op) return currentIn;
+    if(op==="+") return memory+currentIn;
+    if(op==="-") return memory-currentIn;
+    if(op==="×") return memory*currentIn;
+    if(op==="÷") return currentIn!==0?memory/currentIn:memory;
+    return currentIn;
+  }
+  const result    = calcResult();
+  const hasResult = result>0||tape.length>0||op!==null;
+  const resConverted = cvt(result,"in",to);
+
+  // ── Dígito ───────────────────────────────────────────────
+  function digit(d){
+    if(justEq){ clearAll(); }
+    if(slashOn){ setFracDen(v=>(v+d).slice(0,3)); return; }
+    setBuf(v=>(v==="0"?"":v+d).slice(0,6));
+  }
+
+  // ── Confirmar PIES ───────────────────────────────────────
   function confirmFt(){
     const n=parseFloat(buf)||0;
-    if(n>0) setFtVal(n);
+    if(n>0){ setFtAcc(n); }
     setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
+    setJustEq(false);
   }
 
-  // ── Confirmar pulgadas ──────────────────────────────────────
+  // ── Confirmar PULGADAS ───────────────────────────────────
   function confirmIn(){
     if(slashOn){
-      // fracción manual: fracNum / fracDen
       const n=parseFloat(fracNum)||0;
-      const d=parseFloat(fracDen)||1;
-      setFracN(Math.round((n/d)*16)); // convertir a 16avos
+      const d=parseFloat(fracDen)||16;
+      setFracN(v=>v+Math.round((n/d)*16));
       setSlash(false); setFracDen(""); setFracNum(""); setBuf("");
     } else {
       const n=parseFloat(buf)||0;
-      if(n>0) setInVal(n);
+      if(n>0) setInAcc(n);
       setBuf(""); setSlash(false);
     }
+    setJustEq(false);
   }
 
-  // ── Slash: iniciar fracción manual ──────────────────────────
+  // ── Slash fracción manual ─────────────────────────────────
   function slash(){
-    // buf tiene el numerador ya escrito
-    setFracNum(buf||"1");
-    setBuf("");
-    setFracDen("");
-    setSlash(true);
+    setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true);
   }
 
-  // ── +1/16 acumulador ────────────────────────────────────────
-  function addSixteenth(){ setFracN(v=>v+1); }
-  function subSixteenth(){ setFracN(v=>Math.max(0,v-1)); }
+  // ── Fracciones rápidas acumulables ───────────────────────
+  function addFrac(n16){ setFracN(v=>v+n16); setJustEq(false); }
 
-  // ── Fracciones rápidas (set directo en 16avos) ───────────────
-  function setFrac16(n16){ setFracN(v=>v===n16?0:n16); }
+  // ── Operación matemática ──────────────────────────────────
+  function pressOp(o){
+    if(currentIn===0&&memory===0) return;
+    const cur=currentIn||0;
+    let newMem=memory;
+    if(op&&cur>0){
+      if(op==="+") newMem=memory+cur;
+      else if(op==="-") newMem=memory-cur;
+      else if(op==="×") newMem=memory*cur;
+      else if(op==="÷") newMem=cur!==0?memory/cur:memory;
+    } else {
+      newMem=cur>0?cur:memory;
+    }
+    const lbl=numDisplay();
+    if(lbl!=="0") setTape(t=>[...t,{label:lbl,op:o,val:cur}]);
+    setMemory(newMem);
+    setOp(o);
+    setFtAcc(0); setInAcc(0); setFracN(0);
+    setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
+    setJustEq(false);
+  }
 
-  // ── Borrar ──────────────────────────────────────────────────
+  // ── Igual ─────────────────────────────────────────────────
+  function pressEqual(){
+    const res=calcResult();
+    const lbl=numDisplay();
+    setTape(t=>[...t,{label:lbl,op:"=",val:currentIn}]);
+    // resultado se convierte en nuevo valor
+    const ftR=Math.floor(res/12);
+    const inR=parseFloat((res%12).toFixed(6));
+    setFtAcc(ftR); setInAcc(Math.floor(inR));
+    setFracN(Math.round((inR%1)*16));
+    setMemory(0); setOp(null);
+    setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
+    setJustEq(true);
+  }
+
+  // ── Borrar ────────────────────────────────────────────────
   function backspace(){
     if(slashOn){ setFracDen(v=>v.slice(0,-1)); return; }
-    if(buf) { setBuf(v=>v.slice(0,-1)); return; }
-    // si buf vacío, borra en orden inverso
+    if(buf){ setBuf(v=>v.slice(0,-1)); return; }
     if(fracN>0){ setFracN(0); return; }
-    if(inVal>0){ setInVal(0); return; }
-    if(ftVal>0){ setFtVal(0); return; }
+    if(inAcc>0){ setInAcc(0); return; }
+    if(ftAcc>0){ setFtAcc(0); return; }
   }
 
-  // ── Limpiar todo ────────────────────────────────────────────
+  // ── Limpiar todo ──────────────────────────────────────────
   function clearAll(){
-    setBuf(""); setFtVal(0); setInVal(0); setFracN(0);
-    setSlash(false); setFracDen(""); setFracNum(""); setEntered(false);
+    setBuf(""); setFtAcc(0); setInAcc(0); setFracN(0);
+    setSlash(false); setFracDen(""); setFracNum("");
+    setMemory(0); setOp(null); setTape([]); setJustEq(false);
   }
 
-  // ── Calcular total ──────────────────────────────────────────
-  const fracInches = fracN/16;
-  const totalIn    = ftVal*12 + inVal + fracInches;
-  const hasVal     = totalIn>0;
-  const res        = hasVal ? cvt(totalIn,"in",to) : null;
-
-  // ── Display de la medida construida ─────────────────────────
-  function displayStr(){
-    const parts=[];
-    if(ftVal>0) parts.push(`${ftVal} ft`);
-    if(inVal>0||fracN>0){
-      let s=inVal>0?`${inVal}`:"";
-      if(fracN>0){
-        // simplify fraction
-        const g=gcd(fracN,16);
-        s+=(s?" ":"")+`${fracN/g}/${16/g}"`;
-      } else { s+='"'; }
-      parts.push(s);
-    }
-    return parts.length ? parts.join(" ") : "0";
-  }
-
-  // ── Display del buffer activo ────────────────────────────────
-  function bufDisplay(){
-    if(slashOn) return fracNum+(fracDen?`/${fracDen}`:"/_");
-    return buf||"";
-  }
-
-  // ── Botón helper ────────────────────────────────────────────
-  function Btn({label, onPress, amber, gray, active, small, wide, style:st}){
+  // ── Botón ─────────────────────────────────────────────────
+  function KB({label,onPress,bg,color,style:st}){
     return(
       <button onPointerDown={e=>{e.preventDefault();onPress();}}
-        style={{
-          borderRadius:14, border:"none", cursor:"pointer",
-          fontWeight:800, lineHeight:1,
-          userSelect:"none", WebkitUserSelect:"none",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize: small?13:wide?17:18,
-          height: wide?64:56,
-          background: active||amber ? C.amber : gray ? "#D1C8BC" : C.white,
-          color: active||amber ? C.white : C.ink1,
-          boxShadow: active||amber ? `0 4px 16px ${C.amber}55` : "0 1px 4px rgba(0,0,0,0.1)",
-          transition:"transform .08s, box-shadow .08s",
-          ...(st||{}),
-        }}>
+        style={{borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,
+          lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:15,height:46,
+          background:bg||C.white,color:color||C.ink1,
+          boxShadow:"0 1px 3px rgba(0,0,0,0.1)",
+          transition:"opacity .1s",...(st||{})}}>
         {label}
       </button>
     );
   }
 
-  const QUICK_FRACS=[
-    [1,"1/16\""],[2,"1/8\""],[3,"3/16\""],[4,"1/4\""],
-    [6,"3/8\""],[8,"1/2\""],[10,"5/8\""],[12,"3/4\""],[14,"7/8\""],
-  ];
+  // ── Fracción simplificada para display ───────────────────
+  function fracLabel(n16){
+    if(n16===0) return "0";
+    const g=gcd(n16,16);
+    return `${n16/g}/${16/g}"`;
+  }
 
   return(
     <div style={{userSelect:"none",WebkitUserSelect:"none"}}>
 
-      {/* ── PANTALLA ÚNICA FIJA — medida + resultado en un solo bloque ── */}
-      <div style={{background:"linear-gradient(160deg,#1C1C1E,#2A2A2E)",borderRadius:22,padding:"14px 16px",marginBottom:10,minHeight:148}}>
-        <div style={{display:"flex",gap:12,height:"100%"}}>
+      {/* ══ PANTALLA ══════════════════════════════════════════ */}
+      <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",borderRadius:18,padding:"12px 14px",marginBottom:8}}>
+        <div style={{display:"flex",gap:10}}>
 
-          {/* Columna izquierda — medida */}
+          {/* Izq — cinta + entrada */}
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:5}}>Medida</div>
-            <div style={{fontSize:30,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-0.5,lineHeight:1.1,minHeight:38,wordBreak:"break-all"}}>
-              {displayStr()}
-            </div>
-            {/* Buffer activo */}
-            {(buf||slashOn)&&(
-              <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:4,background:"rgba(212,144,10,0.2)",borderRadius:8,padding:"3px 10px",border:`1px solid ${C.amber}44`}}>
-                <span style={{fontSize:11,color:C.amber,fontWeight:700}}>→</span>
-                <span style={{fontSize:14,color:C.amber,fontFamily:"monospace",fontWeight:800}}>{bufDisplay()}</span>
+            {/* Cinta de operaciones */}
+            {tape.length>0&&(
+              <div style={{fontSize:10,color:"#555",fontFamily:"monospace",marginBottom:4,lineHeight:1.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {tape.slice(-3).map((t,i)=>(
+                  <span key={i}>{t.label} <span style={{color:C.amber}}>{t.op}</span>{" "}</span>
+                ))}
               </div>
             )}
-            {/* Mini conversiones */}
-            {hasVal&&(
-              <div style={{marginTop:8,display:"flex",gap:8,flexWrap:"wrap"}}>
-                <span style={{fontSize:11,color:"#888",fontFamily:"monospace"}}>{fmt(totalIn,3)}"</span>
-                <span style={{fontSize:11,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(totalIn,"in","cm"),2)}cm</span>
-                <span style={{fontSize:11,color:"#E8956D",fontFamily:"monospace"}}>{toFrac(totalIn,16)}</span>
+            {/* Operación pendiente */}
+            {op&&<div style={{fontSize:11,color:C.amber,fontWeight:700,marginBottom:2}}>{op}</div>}
+            {/* Número actual */}
+            <div style={{fontSize:28,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {numDisplay()}
+            </div>
+            {/* Mini equivalencias */}
+            {currentIn>0&&(
+              <div style={{marginTop:5,display:"flex",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:10,color:"#666",fontFamily:"monospace"}}>{fmt(currentIn,3)}"</span>
+                <span style={{fontSize:10,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(currentIn,"in","mm"),1)}mm</span>
+                <span style={{fontSize:10,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(currentIn,"in","cm"),2)}cm</span>
               </div>
             )}
           </div>
 
           {/* Divisor */}
-          <div style={{width:1,background:"rgba(255,255,255,0.08)",alignSelf:"stretch"}}/>
+          <div style={{width:1,background:"rgba(255,255,255,0.07)",alignSelf:"stretch",flexShrink:0}}/>
 
-          {/* Columna derecha — resultado */}
-          <div style={{width:140,flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:4}}>Resultado</div>
-            {/* Selector unidad compacto */}
+          {/* Der — resultado */}
+          <div style={{width:120,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
             <select value={to} onChange={e=>setTo(e.target.value)}
-              style={{background:"rgba(255,255,255,0.08)",border:`1px solid rgba(255,255,255,0.12)`,borderRadius:8,padding:"6px 8px",color:C.white,fontSize:12,fontWeight:700,outline:"none",cursor:"pointer",marginBottom:6,width:"100%"}}>
-              {UNITS.map(u=><option key={u} value={u} style={{background:"#1C1C1E"}}>{UL[u]}</option>)}
+              style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"5px 6px",color:C.white,fontSize:11,fontWeight:700,outline:"none",cursor:"pointer",width:"100%"}}>
+              {UNITS.map(u=><option key={u} value={u} style={{background:"#1A1A1C"}}>{UL[u]}</option>)}
             </select>
-            {/* Número resultado grande */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",background:hasVal?`linear-gradient(135deg,${C.amber},#A06808)`:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 10px",textAlign:"center",boxShadow:hasVal?`0 4px 16px ${C.amber}44`:"none",transition:"background .3s"}}>
-              {hasVal?(
+            <div style={{flex:1,background:hasResult?`linear-gradient(135deg,${C.amber},#9A6005)`:"rgba(255,255,255,0.04)",borderRadius:10,padding:"8px",textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",minHeight:52,transition:"background .25s"}}>
+              {hasResult?(
                 <>
-                  <div style={{fontSize:28,fontWeight:900,color:C.white,letterSpacing:-1,lineHeight:1,fontFamily:"monospace"}}>{fmt(res,3)}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:3}}>{US[to]}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:C.white,letterSpacing:-.5,lineHeight:1,fontFamily:"monospace"}}>{fmt(resConverted,3)}</div>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,.65)",marginTop:2}}>{US[to]}</div>
                 </>
               ):(
-                <div style={{fontSize:12,color:"#444",fontWeight:600}}>—</div>
+                <div style={{fontSize:11,color:"#333"}}>—</div>
               )}
             </div>
+            {/* fracción acumulada */}
+            {fracN>0&&(
+              <div style={{background:`${C.amber}20`,borderRadius:8,padding:"4px 6px",textAlign:"center",border:`1px solid ${C.amber}44`}}>
+                <span style={{fontSize:11,color:C.amber,fontWeight:700,fontFamily:"monospace"}}>+{fracLabel(fracN)}</span>
+              </div>
+            )}
           </div>
-
         </div>
       </div>
 
-      {/* ── TECLADO PRINCIPAL ──────────────────────────────────── */}
-      <div style={{background:C.field,borderRadius:22,padding:"12px",boxShadow:"0 2px 14px rgba(0,0,0,0.08)",marginBottom:10}}>
+      {/* ══ TECLADO ═══════════════════════════════════════════ */}
+      <div style={{background:"#EDEAE5",borderRadius:18,padding:"10px",boxShadow:"0 2px 10px rgba(0,0,0,0.08)"}}>
 
-        {/* Fila 1: ft  in  ⌫ */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-          <Btn label="ft" onPress={confirmFt} amber style={{fontSize:20,letterSpacing:1}}/>
-          <Btn label='in "' onPress={confirmIn} amber style={{fontSize:18}}/>
-          <Btn label="⌫" onPress={backspace} gray/>
-        </div>
-
-        {/* Fila 2: 7 8 9 */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-          {["7","8","9"].map(d=><Btn key={d} label={d} onPress={()=>digit(d)}/>)}
-        </div>
-        {/* Fila 3: 4 5 6 */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-          {["4","5","6"].map(d=><Btn key={d} label={d} onPress={()=>digit(d)}/>)}
-        </div>
-        {/* Fila 4: 1 2 3 */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-          {["1","2","3"].map(d=><Btn key={d} label={d} onPress={()=>digit(d)}/>)}
-        </div>
-        {/* Fila 5: . 0 / */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-          <Btn label="." onPress={()=>{ if(!buf.includes(".")) digit("."); }}/>
-          <Btn label="0" onPress={()=>digit("0")}/>
-          <Btn label="/" onPress={slash} style={{fontSize:22,color:C.amber}}/>
+        {/* Fila 0: ft  in  /  ⌫  C */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+          <KB label="ft" onPress={confirmFt} bg={C.amber} color={C.white} style={{fontSize:16,letterSpacing:.5}}/>
+          <KB label='in "' onPress={confirmIn} bg={C.amber} color={C.white} style={{fontSize:14}}/>
+          <KB label="/" onPress={slash} bg="#D8D0C8" color={C.amber} style={{fontSize:20}}/>
+          <KB label="⌫" onPress={backspace} bg="#D8D0C8" color={C.ink2}/>
+          <KB label="C" onPress={clearAll} bg={`${C.red}18`} color={C.red} style={{border:`1.5px solid ${C.red}33`}}/>
         </div>
 
-        {/* Fila 6: +1/16  -1/16  C */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          <Btn label={`+¹⁄₁₆`} onPress={addSixteenth}
-            style={{background:`${C.amber}18`,color:C.amber,border:`1.5px solid ${C.amberBd}`,fontSize:16}}/>
-          <Btn label={`-¹⁄₁₆`} onPress={subSixteenth}
-            style={{background:`${C.amber}10`,color:C.amber,border:`1.5px solid ${C.amberBd}`,fontSize:16}}/>
-          <Btn label="C" onPress={clearAll} style={{background:`${C.red}15`,color:C.red,border:`1.5px solid ${C.red}44`}}/>
-        </div>
-
-        {/* Contador de 16avos activo */}
-        {fracN>0&&(
-          <div style={{marginTop:10,textAlign:"center",padding:"8px",background:C.amberBg,borderRadius:10,border:`1px solid ${C.amberBd}`}}>
-            <span style={{fontSize:13,color:C.amber,fontWeight:700,fontFamily:"monospace"}}>
-              +{fracN}/16" = {fmt(fracN/16,4)}"
-              {" — "}{(()=>{const g=gcd(fracN,16);return `${fracN/g}/${16/g}"`})()}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── FRACCIONES RÁPIDAS ─────────────────────────────────── */}
-      <div style={{background:C.white,borderRadius:20,padding:"14px 12px",boxShadow:"0 1px 8px rgba(0,0,0,0.06)"}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.ink3,textTransform:"uppercase",letterSpacing:.6,marginBottom:10}}>
-          Fracciones rápidas — toca para agregar
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
-          {QUICK_FRACS.map(([n16,label])=>(
-            <button key={label} onPointerDown={e=>{e.preventDefault();setFrac16(n16);}}
-              style={{height:50,borderRadius:12,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
-                background:fracN===n16?C.amber:`${C.amber}14`,
-                color:fracN===n16?C.white:C.amber,
-                boxShadow:fracN===n16?`0 3px 10px ${C.amber}44`:"none",
-                transition:"all .12s",userSelect:"none",WebkitUserSelect:"none",lineHeight:1.2,padding:"4px 2px"}}>
-              {label}
-            </button>
+        {/* Fila 1: fracciones rápidas acumulables */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+          {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"],[12,"¾"]].map(([n16,lbl])=>(
+            <KB key={n16} label={lbl} onPress={()=>addFrac(n16)}
+              bg={`${C.amber}18`} color={C.amber}
+              style={{fontSize:14,border:`1px solid ${C.amberBd}`,height:40}}/>
           ))}
-          <button onPointerDown={e=>{e.preventDefault();setFracN(0);}}
-            style={{height:50,borderRadius:12,fontSize:12,fontWeight:700,border:`1.5px solid ${C.border}`,cursor:"pointer",
-              background:fracN===0?C.field:"transparent",color:C.ink3,
-              userSelect:"none",WebkitUserSelect:"none"}}>
-            ✕ 0
-          </button>
         </div>
-        <div style={{marginTop:10,fontSize:12,color:C.ink4,textAlign:"center"}}>
-          También puedes escribir fracción manual: escribe numerador → <span style={{color:C.amber,fontWeight:700}}>/</span> → denominador → <span style={{color:C.amber,fontWeight:700}}>in</span>
+
+        {/* Filas numéricas 7-8-9 | ÷ */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+          {["7","8","9"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
+          <KB label="÷" onPress={()=>pressOp("÷")} bg={op==="÷"?"#8B6340":C.white} color={op==="÷"?C.white:"#8B6340"} style={{fontSize:20}}/>
         </div>
+
+        {/* 4-5-6 | × */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+          {["4","5","6"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
+          <KB label="×" onPress={()=>pressOp("×")} bg={op==="×"?"#8B6340":C.white} color={op==="×"?C.white:"#8B6340"} style={{fontSize:20}}/>
+        </div>
+
+        {/* 1-2-3 | − */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
+          {["1","2","3"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
+          <KB label="−" onPress={()=>pressOp("-")} bg={op==="-"?"#8B6340":C.white} color={op==="-"?C.white:"#8B6340"} style={{fontSize:22}}/>
+        </div>
+
+        {/* . | 0 | = | + */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
+          <KB label="." onPress={()=>{if(!buf.includes("."))digit(".");}}/>
+          <KB label="0" onPress={()=>digit("0")}/>
+          <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white} style={{fontSize:22,boxShadow:`0 3px 12px ${C.amber}44`}}/>
+          <KB label="+" onPress={()=>pressOp("+")} bg={op==="+"?"#8B6340":C.white} color={op==="+"?C.white:"#8B6340"} style={{fontSize:22}}/>
+        </div>
+
       </div>
     </div>
   );

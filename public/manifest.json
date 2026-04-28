@@ -1,24 +1,20 @@
 {
-  "name": "CutWise — Carpintería",
+  "name": "CutWise",
   "short_name": "CutWise",
-  "description": "Calculadora profesional de carpintería por Vinicio Meléndez",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#F5F0EB",
-  "theme_color": "#D4900A",
+  "background_color": "#000000",
+  "theme_color": "#f97316",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }

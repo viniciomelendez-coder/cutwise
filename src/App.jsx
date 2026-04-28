@@ -358,58 +358,199 @@ function ResultBox({res,from,to,val}){
   );
 }
 
-// ── MODO TALLER ──────────────────────────────────────────────
+// ── MODO TALLER — Calculadora tipo profesional ───────────────
+// Estado de la calculadora: ft / in / num / frac
+// Flujo: presionas dígitos → ft o in → fracción opcional → resultado live
 function WorkshopMode(){
-  const[input,setInput]=useState("");
-  const[to,setTo]=useState("mm");
-  const[plusCount,setPlusCount]=useState(0);
+  // Acumuladores
+  const[ftVal,  setFtVal]  = useState("");   // valor de pies actual
+  const[inVal,  setInVal]  = useState("");   // valor de pulgadas actual
+  const[numBuf, setNumBuf] = useState("");   // buffer numérico activo
+  const[fracAdd,setFracAdd]= useState(0);    // fracción seleccionada en pulgadas
+  const[to,     setTo]     = useState("mm");
+  const[mode,   setMode]   = useState("ft"); // "ft" | "in"  — qué unidad está editando
 
-  const baseIn=parseWorkshopInput(input)+(plusCount/16);
-  const hasVal=input.trim()!==""||plusCount>0;
-  const res=hasVal?cvt(baseIn,"in",to):null;
+  // Construye el display visual de la medida
+  function buildDisplay(){
+    const parts=[];
+    const f=ftVal||"0";
+    const i=inVal||"0";
+    const fr=fracAdd>0?` ${fracAdd<1?fracAdd*16+"/16":fracAdd+""}`:""
+    if(ftVal)  parts.push(`${f} ft`);
+    if(inVal)  parts.push(`${i}${fr}"`);
+    else if(fracAdd>0&&!inVal) parts.push(`${fr.trim()}`);
+    return parts.length?parts.join(" — "):"0";
+  }
+
+  // Calcula el total en pulgadas decimales
+  function totalInches(){
+    const f=parseFloat(ftVal)||0;
+    const i=parseFloat(inVal)||0;
+    return f*12 + i + fracAdd;
+  }
+
+  const total=totalInches();
+  const hasVal=total>0;
+  const res=hasVal?cvt(total,"in",to):null;
+
+  // Presionar un dígito
+  function pressDigit(d){
+    if(mode==="ft"){
+      const next=(ftVal+d).replace(/^0+/,"")||"0";
+      setFtVal(next==="0"?"":next);
+    } else {
+      const next=(inVal+d).replace(/^0+/,"")||"0";
+      setInVal(next==="0"?"":next);
+    }
+  }
+
+  // Borrar último dígito
+  function backspace(){
+    if(mode==="ft") setFtVal(v=>v.slice(0,-1));
+    else            setInVal(v=>v.slice(0,-1));
+  }
+
+  // Limpiar todo
+  function clearAll(){
+    setFtVal(""); setInVal(""); setNumBuf("");
+    setFracAdd(0); setMode("ft");
+  }
+
+  // Cambiar a modo in
+  function pressFt(){ setMode("ft"); }
+  function pressIn(){ setMode("in"); }
+
+  // Seleccionar fracción — toggle
+  function pressFrac(f){
+    setFracAdd(prev=>prev===f?0:f);
+    setMode("in");
+  }
+
+  // Estilo de botón base
+  function btn(label, onPress, opts={}){
+    const{big,accent,dark,active,small}=opts;
+    return(
+      <button key={label} onPointerDown={e=>{e.preventDefault();onPress();}}
+        style={{
+          height: big?72:56, borderRadius:14,
+          fontSize: small?13:big?22:18,
+          fontWeight:700, border:"none", cursor:"pointer",
+          background: active?C.amber:accent?C.amber:dark?"#2C2C2E":"#E8E0D5",
+          color: active||accent?C.white:dark?"#EDE8DC":C.ink1,
+          boxShadow: active||accent?`0 4px 14px ${C.amber}55`:"0 1px 3px rgba(0,0,0,0.08)",
+          transition:"all .1s", display:"flex", alignItems:"center",
+          justifyContent:"center", lineHeight:1, userSelect:"none",
+          WebkitUserSelect:"none",
+        }}>
+        {label}
+      </button>
+    );
+  }
+
+  const FRACS=[
+    [1/16,"1/16\""],[1/8,"1/8\""],[3/16,"3/16\""],[1/4,"1/4\""],
+    [5/16,"5/16\""],[3/8,"3/8\""],[7/16,"7/16\""],[1/2,"1/2\""],
+    [9/16,"9/16\""],[5/8,"5/8\""],[11/16,"11/16\""],[3/4,"3/4\""],
+    [13/16,"13/16\""],[7/8,"7/8\""],[15/16,"15/16\""],
+  ];
 
   return(
-    <div>
-      <div style={{...K.card,marginBottom:12}}>
-        <FL>Medida tipo taller</FL>
-        <input value={input} onChange={e=>setInput(e.target.value)} placeholder='Ej: 2 ft 3 1/8  ó  3 5/16  ó  1 ft 6 in'
-          style={{...K.inp,fontSize:18,fontFamily:"monospace",marginBottom:14}}/>
-        <div style={{background:`${C.amber}12`,borderRadius:10,padding:"10px 14px",fontSize:13,color:C.ink2,borderLeft:`3px solid ${C.amber}`,marginBottom:14,lineHeight:1.6}}>
-          <strong style={{color:C.amber}}>Ejemplos válidos:</strong><br/>
-          <span style={{fontFamily:"monospace"}}>2 ft 3 1/8</span> &nbsp;·&nbsp; <span style={{fontFamily:"monospace"}}>3 5/16</span> &nbsp;·&nbsp; <span style={{fontFamily:"monospace"}}>1 ft 6 in</span> &nbsp;·&nbsp; <span style={{fontFamily:"monospace"}}>96</span>
+    <div style={{userSelect:"none"}}>
+
+      {/* PANTALLA */}
+      <div style={{background:`linear-gradient(135deg,#1C1C1E,#2C2C2E)`,borderRadius:20,padding:"18px 20px",marginBottom:12,minHeight:110}}>
+        {/* Modo activo */}
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          {[["ft","Pies"],["in","Pulgadas"]].map(([m,l])=>(
+            <div key={m} style={{padding:"4px 12px",borderRadius:20,background:mode===m?`${C.amber}33`:"transparent",border:`1px solid ${mode===m?C.amber:"rgba(255,255,255,0.15)"}`,color:mode===m?C.amber:"#555",fontSize:12,fontWeight:700}}>
+              {l}
+            </div>
+          ))}
         </div>
-        <FL>Convertir a</FL>
-        <select value={to} onChange={e=>setTo(e.target.value)} style={K.sel}>
+        {/* Display principal */}
+        <div style={{fontSize:32,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-1,lineHeight:1.1,minHeight:40}}>
+          {ftVal&&<span>{ftVal}<span style={{fontSize:18,color:"#888",marginLeft:3}}>ft</span>{" "}</span>}
+          {inVal&&<span>{inVal}<span style={{fontSize:18,color:"#888"}}>″</span></span>}
+          {fracAdd>0&&<span style={{color:C.amber,fontSize:24}}>{" "}{FRACS.find(([v])=>v===fracAdd)?.[1]||""}</span>}
+          {!ftVal&&!inVal&&fracAdd===0&&<span style={{color:"#444"}}>0</span>}
+        </div>
+        {/* Resultado live */}
+        {hasVal&&(
+          <div style={{marginTop:8,display:"flex",gap:16,flexWrap:"wrap"}}>
+            <span style={{fontSize:13,color:C.amber,fontFamily:"monospace",fontWeight:700}}>{fmt(total,4)}"</span>
+            <span style={{fontSize:13,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(total,"in","mm"),2)} mm</span>
+            <span style={{fontSize:13,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(total,"in","cm"),3)} cm</span>
+            <span style={{fontSize:13,color:"#E8956D",fontFamily:"monospace"}}>{toFrac(total,16)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* SELECTOR DE CONVERSIÓN */}
+      <div style={{display:"flex",gap:8,marginBottom:12,alignItems:"center"}}>
+        <span style={{fontSize:13,color:C.ink3,fontWeight:600,whiteSpace:"nowrap"}}>Convertir a:</span>
+        <select value={to} onChange={e=>setTo(e.target.value)}
+          style={{...K.sel,flex:1,padding:"10px 12px",fontSize:14}}>
           {UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}
         </select>
       </div>
 
-      {/* +1/16 rápido */}
-      <div style={{...K.card,marginBottom:12}}>
-        <FL>+1/16" acumulativo (taller rápido)</FL>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <button onClick={()=>setPlusCount(Math.max(0,plusCount-1))} style={{width:48,height:48,borderRadius:12,background:C.field,border:`1.5px solid ${C.border}`,fontSize:22,cursor:"pointer",fontWeight:700,color:C.ink2}}>−</button>
-          <div style={{flex:1,textAlign:"center",background:C.field,borderRadius:12,padding:"10px 0"}}>
-            <div style={{fontSize:20,fontWeight:800,color:C.amber,fontFamily:"monospace"}}>+{plusCount}/16"</div>
-            <div style={{fontSize:12,color:C.ink3}}>= {(plusCount/16).toFixed(4)}"</div>
-          </div>
-          <button onClick={()=>setPlusCount(plusCount+1)} style={{width:48,height:48,borderRadius:12,background:C.amber,border:"none",fontSize:22,cursor:"pointer",fontWeight:700,color:C.white,boxShadow:`0 4px 12px ${C.amber}44`}}>+</button>
-          <button onClick={()=>setPlusCount(0)} style={{width:48,height:48,borderRadius:12,background:C.field,border:`1.5px solid ${C.border}`,fontSize:13,cursor:"pointer",fontWeight:700,color:C.ink3}}>Reset</button>
+      {/* RESULTADO CONVERSIÓN */}
+      {hasVal&&res!==null&&(
+        <div style={{background:`linear-gradient(135deg,${C.amber},#A06808)`,borderRadius:16,padding:"14px 20px",textAlign:"center",marginBottom:12,boxShadow:`0 6px 20px ${C.amber}44`}}>
+          <div style={{fontSize:13,color:"rgba(255,255,255,.7)",marginBottom:2}}>{fmt(total,4)}" =</div>
+          <div style={{fontSize:42,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1}}>{fmt(res,4)}</div>
+          <div style={{fontSize:16,color:"rgba(255,255,255,.8)",marginTop:3}}>{UL[to]}</div>
+        </div>
+      )}
+
+      {/* TECLADO NUMÉRICO */}
+      <div style={{background:C.white,borderRadius:20,padding:"14px 12px",boxShadow:"0 2px 12px rgba(0,0,0,0.08)",marginBottom:12}}>
+        {/* Fila modo ft/in + borrar */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+          {btn("ft", pressFt, {active:mode==="ft",dark:false})}
+          {btn("in", pressIn, {active:mode==="in",dark:false})}
+          {btn("⌫", backspace, {dark:false})}
+        </div>
+        {/* Dígitos 7-8-9 */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+          {["7","8","9"].map(d=>btn(d,()=>pressDigit(d)))}
+        </div>
+        {/* Dígitos 4-5-6 */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+          {["4","5","6"].map(d=>btn(d,()=>pressDigit(d)))}
+        </div>
+        {/* Dígitos 1-2-3 */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+          {["1","2","3"].map(d=>btn(d,()=>pressDigit(d)))}
+        </div>
+        {/* 0 + C */}
+        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:8}}>
+          {btn("0", ()=>pressDigit("0"), {big:false})}
+          {btn("C", clearAll, {accent:false, dark:false})}
         </div>
       </div>
 
-      {/* Resultado */}
-      <div style={{background:hasVal?`linear-gradient(135deg,${C.amber},#A06808)`:C.white,borderRadius:22,padding:"24px",textAlign:"center",boxShadow:hasVal?`0 8px 28px ${C.amber}44`:"0 1px 6px rgba(0,0,0,0.06)",border:hasVal?"none":`1px solid ${C.border}`,minHeight:120,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        {hasVal?(
-          <>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.7)",marginBottom:4}}>{fmt(baseIn,5)}" decimales =</div>
-            <div style={{fontSize:48,fontWeight:900,color:C.white,letterSpacing:-2,lineHeight:1}}>{fmt(res,4)}</div>
-            <div style={{fontSize:18,color:"rgba(255,255,255,.8)",marginTop:4}}>{UL[to]}</div>
-            {to==="in"&&<div style={{fontSize:14,color:"rgba(255,255,255,.75)",marginTop:6}}>{toFrac(baseIn,16)} · {toFrac(baseIn,32)}</div>}
-          </>
-        ):(
-          <div style={{fontSize:15,color:C.ink4}}>Ingresa una medida de taller arriba</div>
-        )}
+      {/* FRACCIONES */}
+      <div style={{background:C.white,borderRadius:20,padding:"14px 12px",boxShadow:"0 2px 12px rgba(0,0,0,0.08)"}}>
+        <div style={{fontSize:12,fontWeight:700,color:C.ink3,textTransform:"uppercase",letterSpacing:.6,marginBottom:10}}>
+          Fracción de pulgada — toca para agregar
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+          {FRACS.map(([v,l])=>(
+            <button key={l} onPointerDown={e=>{e.preventDefault();pressFrac(v);}}
+              style={{height:48,borderRadius:12,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+                background:fracAdd===v?C.amber:`${C.amber}15`,
+                color:fracAdd===v?C.white:C.amber,
+                boxShadow:fracAdd===v?`0 3px 10px ${C.amber}44`:"none",
+                transition:"all .15s",userSelect:"none",WebkitUserSelect:"none",lineHeight:1.2,padding:"4px 2px"}}>
+              {l}
+            </button>
+          ))}
+          <button onPointerDown={e=>{e.preventDefault();setFracAdd(0);}}
+            style={{height:48,borderRadius:12,fontSize:12,fontWeight:700,border:`1.5px solid ${C.border}`,cursor:"pointer",background:fracAdd===0?C.field:"transparent",color:C.ink3,userSelect:"none",WebkitUserSelect:"none"}}>
+            ✕ Sin
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1557,7 +1698,7 @@ function ProTab({catalog,projects}){
       {/* ── PRESET MODAL ── */}
       {showPreset&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowPreset(false)}>
-          <div style={{background:"#1E1C32",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"85vh",overflow:"auto",padding:24,border:"1px solid rgba(255,255,255,0.1)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{background:"#1E1C32",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflow:"auto",padding:"24px 24px calc(env(safe-area-inset-bottom,0px) + 32px)",border:"1px solid rgba(255,255,255,0.1)"}} onClick={e=>e.stopPropagation()}>
             <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)",margin:"0 auto 20px"}}/>
             <div style={{fontSize:18,fontWeight:800,color:C.proText,marginBottom:4}}>Gabinete Preinstalado</div>
             <div style={{fontSize:13,color:"#555",marginBottom:20}}>Genera el despiece automáticamente</div>

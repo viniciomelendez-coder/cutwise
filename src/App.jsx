@@ -497,52 +497,59 @@ function WorkshopMode(){
   return(
     <div style={{userSelect:"none",WebkitUserSelect:"none"}}>
 
-      {/* ── PANTALLA ─────────────────────────────────────────── */}
-      <div style={{background:"linear-gradient(160deg,#1C1C1E,#2A2A2E)",borderRadius:22,padding:"16px 20px 14px",marginBottom:10,minHeight:130,position:"relative"}}>
+      {/* ── PANTALLA ÚNICA FIJA — medida + resultado en un solo bloque ── */}
+      <div style={{background:"linear-gradient(160deg,#1C1C1E,#2A2A2E)",borderRadius:22,padding:"14px 16px",marginBottom:10,minHeight:148}}>
+        <div style={{display:"flex",gap:12,height:"100%"}}>
 
-        {/* Medida construida */}
-        <div style={{fontSize:11,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:6}}>
-          Medida
-        </div>
-        <div style={{fontSize:34,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-0.5,lineHeight:1,minHeight:42}}>
-          {displayStr()}
-        </div>
-
-        {/* Buffer activo */}
-        {(buf||slashOn)&&(
-          <div style={{marginTop:8,display:"inline-flex",alignItems:"center",gap:6,background:"rgba(212,144,10,0.2)",borderRadius:10,padding:"4px 12px",border:`1px solid ${C.amber}55`}}>
-            <span style={{fontSize:13,color:C.amber,fontWeight:700}}>Ingresando:</span>
-            <span style={{fontSize:15,color:C.amber,fontFamily:"monospace",fontWeight:800}}>{bufDisplay()}</span>
+          {/* Columna izquierda — medida */}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:5}}>Medida</div>
+            <div style={{fontSize:30,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-0.5,lineHeight:1.1,minHeight:38,wordBreak:"break-all"}}>
+              {displayStr()}
+            </div>
+            {/* Buffer activo */}
+            {(buf||slashOn)&&(
+              <div style={{marginTop:6,display:"inline-flex",alignItems:"center",gap:4,background:"rgba(212,144,10,0.2)",borderRadius:8,padding:"3px 10px",border:`1px solid ${C.amber}44`}}>
+                <span style={{fontSize:11,color:C.amber,fontWeight:700}}>→</span>
+                <span style={{fontSize:14,color:C.amber,fontFamily:"monospace",fontWeight:800}}>{bufDisplay()}</span>
+              </div>
+            )}
+            {/* Mini conversiones */}
+            {hasVal&&(
+              <div style={{marginTop:8,display:"flex",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:11,color:"#888",fontFamily:"monospace"}}>{fmt(totalIn,3)}"</span>
+                <span style={{fontSize:11,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(totalIn,"in","cm"),2)}cm</span>
+                <span style={{fontSize:11,color:"#E8956D",fontFamily:"monospace"}}>{toFrac(totalIn,16)}</span>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Resultados live */}
-        {hasVal&&(
-          <div style={{marginTop:10,display:"flex",gap:12,flexWrap:"wrap"}}>
-            <span style={{fontSize:12,color:"#888",fontFamily:"monospace"}}>{fmt(totalIn,4)}"</span>
-            <span style={{fontSize:12,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(totalIn,"in","mm"),2)} mm</span>
-            <span style={{fontSize:12,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(totalIn,"in","cm"),3)} cm</span>
-            <span style={{fontSize:12,color:"#E8956D",fontFamily:"monospace"}}>{fmt(cvt(totalIn,"in","ft"),4)} ft dec</span>
-          </div>
-        )}
-      </div>
+          {/* Divisor */}
+          <div style={{width:1,background:"rgba(255,255,255,0.08)",alignSelf:"stretch"}}/>
 
-      {/* ── RESULTADO CONVERSIÓN ──────────────────────────────── */}
-      {hasVal&&res!==null&&(
-        <div style={{background:`linear-gradient(135deg,${C.amber},#A06808)`,borderRadius:18,padding:"14px 20px",textAlign:"center",marginBottom:10,boxShadow:`0 6px 22px ${C.amber}44`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{textAlign:"left"}}>
-            <div style={{fontSize:11,color:"rgba(255,255,255,.6)",fontWeight:700,marginBottom:2}}>RESULTADO EN</div>
+          {/* Columna derecha — resultado */}
+          <div style={{width:140,flexShrink:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase",marginBottom:4}}>Resultado</div>
+            {/* Selector unidad compacto */}
             <select value={to} onChange={e=>setTo(e.target.value)}
-              style={{background:"transparent",border:"none",color:C.white,fontSize:15,fontWeight:700,outline:"none",cursor:"pointer"}}>
+              style={{background:"rgba(255,255,255,0.08)",border:`1px solid rgba(255,255,255,0.12)`,borderRadius:8,padding:"6px 8px",color:C.white,fontSize:12,fontWeight:700,outline:"none",cursor:"pointer",marginBottom:6,width:"100%"}}>
               {UNITS.map(u=><option key={u} value={u} style={{background:"#1C1C1E"}}>{UL[u]}</option>)}
             </select>
+            {/* Número resultado grande */}
+            <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"center",background:hasVal?`linear-gradient(135deg,${C.amber},#A06808)`:"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 10px",textAlign:"center",boxShadow:hasVal?`0 4px 16px ${C.amber}44`:"none",transition:"background .3s"}}>
+              {hasVal?(
+                <>
+                  <div style={{fontSize:28,fontWeight:900,color:C.white,letterSpacing:-1,lineHeight:1,fontFamily:"monospace"}}>{fmt(res,3)}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:3}}>{US[to]}</div>
+                </>
+              ):(
+                <div style={{fontSize:12,color:"#444",fontWeight:600}}>—</div>
+              )}
+            </div>
           </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:40,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1}}>{fmt(res,4)}</div>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.7)"}}>{US[to]}</div>
-          </div>
+
         </div>
-      )}
+      </div>
 
       {/* ── TECLADO PRINCIPAL ──────────────────────────────────── */}
       <div style={{background:C.field,borderRadius:22,padding:"12px",boxShadow:"0 2px 14px rgba(0,0,0,0.08)",marginBottom:10}}>

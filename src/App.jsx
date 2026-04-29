@@ -529,116 +529,165 @@ function WorkshopMode(){
     return `${n16/g}/${16/g}"`;
   }
 
+  // altura de fila del teclado — calculada para llenar pantalla sin scroll
+  const ROW = "calc((100vh - 340px) / 8)";
+  const GAP = 5;
+
   return(
-    <div style={{userSelect:"none",WebkitUserSelect:"none"}}>
+    <div style={{
+      userSelect:"none", WebkitUserSelect:"none",
+      display:"flex", flexDirection:"column",
+      height:"calc(100vh - 200px)",  // total disponible
+      gap:8,
+    }}>
 
-      {/* ══ PANTALLA ══════════════════════════════════════════ */}
-      <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",borderRadius:18,padding:"12px 14px",marginBottom:8}}>
-        <div style={{display:"flex",gap:10}}>
+      {/* ══ PANTALLA FIJA — nunca cambia de tamaño ════════════ */}
+      <div style={{
+        background:"linear-gradient(160deg,#1A1A1C,#252528)",
+        borderRadius:18, padding:"14px 16px",
+        flexShrink:0,    // NUNCA encoge ni crece
+        height:160,      // altura fija siempre
+      }}>
+        <div style={{display:"flex",gap:12,height:"100%"}}>
 
-          {/* Izq — cinta + entrada */}
-          <div style={{flex:1,minWidth:0}}>
-            {/* Cinta de operaciones */}
-            {tape.length>0&&(
-              <div style={{fontSize:10,color:"#555",fontFamily:"monospace",marginBottom:4,lineHeight:1.5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {tape.slice(-3).map((t,i)=>(
+          {/* Izquierda — entrada */}
+          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+            <div>
+              {/* Cinta */}
+              <div style={{fontSize:10,color:"#555",fontFamily:"monospace",lineHeight:1.5,minHeight:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {tape.slice(-2).map((t,i)=>(
                   <span key={i}>{t.label} <span style={{color:C.amber}}>{t.op}</span>{" "}</span>
                 ))}
               </div>
-            )}
-            {/* Operación pendiente */}
-            {op&&<div style={{fontSize:11,color:C.amber,fontWeight:700,marginBottom:2}}>{op}</div>}
-            {/* Número actual */}
-            <div style={{fontSize:28,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {numDisplay()}
-            </div>
-            {/* Mini equivalencias */}
-            {currentIn>0&&(
-              <div style={{marginTop:5,display:"flex",gap:8,flexWrap:"wrap"}}>
-                <span style={{fontSize:10,color:"#666",fontFamily:"monospace"}}>{fmt(currentIn,3)}"</span>
-                <span style={{fontSize:10,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(currentIn,"in","mm"),1)}mm</span>
-                <span style={{fontSize:10,color:"#6DBF82",fontFamily:"monospace"}}>{fmt(cvt(currentIn,"in","cm"),2)}cm</span>
+              {/* Op pendiente */}
+              <div style={{fontSize:11,color:C.amber,fontWeight:700,minHeight:16}}>
+                {op||""}
               </div>
-            )}
+              {/* Número actual — grande */}
+              <div style={{fontSize:30,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {numDisplay()}
+              </div>
+            </div>
+            {/* Equivalencias siempre visibles */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontSize:10,color:"#555",fontFamily:"monospace"}}>{currentIn>0?fmt(currentIn,3)+'"':''}</span>
+              <span style={{fontSize:10,color:"#5B9BD5",fontFamily:"monospace"}}>{currentIn>0?fmt(cvt(currentIn,"in","mm"),1)+"mm":''}</span>
+              <span style={{fontSize:10,color:"#6DBF82",fontFamily:"monospace"}}>{currentIn>0?fmt(cvt(currentIn,"in","cm"),2)+"cm":''}</span>
+            </div>
           </div>
 
           {/* Divisor */}
-          <div style={{width:1,background:"rgba(255,255,255,0.07)",alignSelf:"stretch",flexShrink:0}}/>
+          <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
 
-          {/* Der — resultado */}
-          <div style={{width:120,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
+          {/* Derecha — resultado, siempre presente */}
+          <div style={{width:118,flexShrink:0,display:"flex",flexDirection:"column",gap:6}}>
+            {/* Selector unidad */}
             <select value={to} onChange={e=>setTo(e.target.value)}
-              style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"5px 6px",color:C.white,fontSize:11,fontWeight:700,outline:"none",cursor:"pointer",width:"100%"}}>
+              style={{background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",
+                borderRadius:8,padding:"5px 6px",color:C.white,fontSize:11,
+                fontWeight:700,outline:"none",cursor:"pointer",width:"100%"}}>
               {UNITS.map(u=><option key={u} value={u} style={{background:"#1A1A1C"}}>{UL[u]}</option>)}
             </select>
-            <div style={{flex:1,background:hasResult?`linear-gradient(135deg,${C.amber},#9A6005)`:"rgba(255,255,255,0.04)",borderRadius:10,padding:"8px",textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",minHeight:52,transition:"background .25s"}}>
-              {hasResult?(
-                <>
-                  <div style={{fontSize:22,fontWeight:900,color:C.white,letterSpacing:-.5,lineHeight:1,fontFamily:"monospace"}}>{fmt(resConverted,3)}</div>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,.65)",marginTop:2}}>{US[to]}</div>
-                </>
-              ):(
-                <div style={{fontSize:11,color:"#333"}}>—</div>
-              )}
-            </div>
-            {/* fracción acumulada */}
-            {fracN>0&&(
-              <div style={{background:`${C.amber}20`,borderRadius:8,padding:"4px 6px",textAlign:"center",border:`1px solid ${C.amber}44`}}>
-                <span style={{fontSize:11,color:C.amber,fontWeight:700,fontFamily:"monospace"}}>+{fracLabel(fracN)}</span>
+            {/* Resultado — caja siempre visible, cambia color cuando hay valor */}
+            <div style={{
+              flex:1,
+              background:hasResult
+                ?`linear-gradient(135deg,${C.amber},#9A6005)`
+                :"rgba(255,255,255,0.05)",
+              borderRadius:12,padding:"10px 8px",
+              textAlign:"center",
+              display:"flex",flexDirection:"column",justifyContent:"center",
+              transition:"background .2s",
+            }}>
+              <div style={{fontSize:24,fontWeight:900,color:hasResult?C.white:"#333",
+                letterSpacing:-.5,lineHeight:1,fontFamily:"monospace"}}>
+                {hasResult?fmt(resConverted,3):"—"}
               </div>
-            )}
+              <div style={{fontSize:10,color:hasResult?"rgba(255,255,255,.65)":"#333",marginTop:3}}>
+                {US[to]}
+              </div>
+            </div>
+            {/* Fracción acumulada — siempre en su espacio */}
+            <div style={{
+              height:22,
+              background:fracN>0?`${C.amber}22`:"transparent",
+              borderRadius:8,
+              display:"flex",alignItems:"center",justifyContent:"center",
+              border:fracN>0?`1px solid ${C.amber}44`:"1px solid transparent",
+              transition:"all .15s",
+            }}>
+              {fracN>0&&<span style={{fontSize:11,color:C.amber,fontWeight:800,fontFamily:"monospace"}}>+{fracLabel(fracN)}</span>}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ══ TECLADO ═══════════════════════════════════════════ */}
-      <div style={{background:"#EDEAE5",borderRadius:18,padding:"10px",boxShadow:"0 2px 10px rgba(0,0,0,0.08)"}}>
+      {/* ══ TECLADO FIJO — ocupa todo el espacio restante ═════ */}
+      <div style={{
+        flex:1,           // toma todo el espacio que sobre
+        background:"#EDEAE5",
+        borderRadius:18,
+        padding:"8px",
+        display:"flex",
+        flexDirection:"column",
+        gap:GAP,
+        boxShadow:"0 2px 10px rgba(0,0,0,0.07)",
+        overflow:"hidden",
+      }}>
+        {/* Cada fila usa flex:1 para distribuirse uniformemente */}
+        {[
+          // [label, onPress, bg, color, extraStyle]
+          [
+            ["ft",   confirmFt,          C.amber,          C.white,  {fontSize:16}],
+            ['in "', confirmIn,          C.amber,          C.white,  {fontSize:14}],
+            ["/",    slash,              "#D4CEC7",        C.amber,  {fontSize:20}],
+            ["⌫",   backspace,          "#D4CEC7",        C.ink2,   {}],
+            ["C",    clearAll,           `${C.red}18`,     C.red,    {border:`1.5px solid ${C.red}33`}],
+          ],
+          [
+            ["¹⁄₁₆", ()=>addFrac(1),   `${C.amber}18`,   C.amber,  {border:`1px solid ${C.amberBd}`,fontSize:13}],
+            ["⅛",    ()=>addFrac(2),   `${C.amber}18`,   C.amber,  {border:`1px solid ${C.amberBd}`,fontSize:15}],
+            ["¼",    ()=>addFrac(4),   `${C.amber}18`,   C.amber,  {border:`1px solid ${C.amberBd}`,fontSize:15}],
+            ["½",    ()=>addFrac(8),   `${C.amber}18`,   C.amber,  {border:`1px solid ${C.amberBd}`,fontSize:15}],
+            ["¾",    ()=>addFrac(12),  `${C.amber}18`,   C.amber,  {border:`1px solid ${C.amberBd}`,fontSize:15}],
+          ],
+        ].map((row,ri)=>(
+          <div key={ri} style={{flex:1,display:"grid",gridTemplateColumns:`repeat(${row.length},1fr)`,gap:GAP}}>
+            {row.map(([lbl,fn,bg,col,st])=>(
+              <KB key={lbl} label={lbl} onPress={fn} bg={bg} color={col} style={{height:"100%",...(st||{})}}/>
+            ))}
+          </div>
+        ))}
 
-        {/* Fila 0: ft  in  /  ⌫  C */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
-          <KB label="ft" onPress={confirmFt} bg={C.amber} color={C.white} style={{fontSize:16,letterSpacing:.5}}/>
-          <KB label='in "' onPress={confirmIn} bg={C.amber} color={C.white} style={{fontSize:14}}/>
-          <KB label="/" onPress={slash} bg="#D8D0C8" color={C.amber} style={{fontSize:20}}/>
-          <KB label="⌫" onPress={backspace} bg="#D8D0C8" color={C.ink2}/>
-          <KB label="C" onPress={clearAll} bg={`${C.red}18`} color={C.red} style={{border:`1.5px solid ${C.red}33`}}/>
+        {/* Filas numéricas con operaciones */}
+        {[
+          [["7","8","9"],["÷","÷"]],
+          [["4","5","6"],["×","×"]],
+          [["1","2","3"],["−","-"]],
+        ].map(([digits,[opLbl,opKey]],ri)=>(
+          <div key={opLbl} style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+            {digits.map(d=><KB key={d} label={d} onPress={()=>digit(d)} style={{height:"100%"}}/>)}
+            <KB label={opLbl} onPress={()=>pressOp(opKey)}
+              bg={op===opKey?"#7A5528":C.white}
+              color={op===opKey?C.white:"#8B6340"}
+              style={{fontSize:20,height:"100%"}}/>
+          </div>
+        ))}
+
+        {/* Última fila: . 0 = + */}
+        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+          <KB label="." onPress={()=>{if(!buf.includes("."))digit(".");}} style={{height:"100%"}}/>
+          <KB label="0" onPress={()=>digit("0")} style={{height:"100%"}}/>
+          <KB label="=" onPress={pressEqual}
+            bg={C.amber} color={C.white}
+            style={{fontSize:22,height:"100%",boxShadow:`0 3px 14px ${C.amber}55`}}/>
+          <KB label="+" onPress={()=>pressOp("+")}
+            bg={op==="+"?"#7A5528":C.white}
+            color={op==="+"?C.white:"#8B6340"}
+            style={{fontSize:22,height:"100%"}}/>
         </div>
-
-        {/* Fila 1: fracciones rápidas acumulables */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
-          {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"],[12,"¾"]].map(([n16,lbl])=>(
-            <KB key={n16} label={lbl} onPress={()=>addFrac(n16)}
-              bg={`${C.amber}18`} color={C.amber}
-              style={{fontSize:14,border:`1px solid ${C.amberBd}`,height:40}}/>
-          ))}
-        </div>
-
-        {/* Filas numéricas 7-8-9 | ÷ */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
-          {["7","8","9"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
-          <KB label="÷" onPress={()=>pressOp("÷")} bg={op==="÷"?"#8B6340":C.white} color={op==="÷"?C.white:"#8B6340"} style={{fontSize:20}}/>
-        </div>
-
-        {/* 4-5-6 | × */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
-          {["4","5","6"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
-          <KB label="×" onPress={()=>pressOp("×")} bg={op==="×"?"#8B6340":C.white} color={op==="×"?C.white:"#8B6340"} style={{fontSize:20}}/>
-        </div>
-
-        {/* 1-2-3 | − */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:6}}>
-          {["1","2","3"].map(d=><KB key={d} label={d} onPress={()=>digit(d)}/>)}
-          <KB label="−" onPress={()=>pressOp("-")} bg={op==="-"?"#8B6340":C.white} color={op==="-"?C.white:"#8B6340"} style={{fontSize:22}}/>
-        </div>
-
-        {/* . | 0 | = | + */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6}}>
-          <KB label="." onPress={()=>{if(!buf.includes("."))digit(".");}}/>
-          <KB label="0" onPress={()=>digit("0")}/>
-          <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white} style={{fontSize:22,boxShadow:`0 3px 12px ${C.amber}44`}}/>
-          <KB label="+" onPress={()=>pressOp("+")} bg={op==="+"?"#8B6340":C.white} color={op==="+"?C.white:"#8B6340"} style={{fontSize:22}}/>
-        </div>
-
       </div>
+
     </div>
   );
 }

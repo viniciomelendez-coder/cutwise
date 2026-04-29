@@ -2103,7 +2103,7 @@ function ProTab({catalog,projects}){
       {/* ── PRESET MODAL ── */}
       {showPreset&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowPreset(false)}>
-          <div style={{background:"#1E1C32",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflow:"auto",padding:"24px 24px calc(env(safe-area-inset-bottom,0px) + 32px)",border:"1px solid rgba(255,255,255,0.1)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{background:"#1E1C32",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"82vh",overflow:"auto",padding:"24px 24px calc(env(safe-area-inset-bottom,0px) + 80px)",border:"1px solid rgba(255,255,255,0.1)"}} onClick={e=>e.stopPropagation()}>
             <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.2)",margin:"0 auto 20px"}}/>
             <div style={{fontSize:18,fontWeight:800,color:C.proText,marginBottom:4}}>Gabinete Preinstalado</div>
             <div style={{fontSize:13,color:"#555",marginBottom:20}}>Genera el despiece automáticamente</div>

@@ -1012,10 +1012,10 @@ function DesignTools(){
           <CL>Espaciado uniforme</CL>
           <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>Para estantes, balusters, tornillos -- distribución equidistante automática.</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div><FL>Largo total</FL><input type="number" inputMode="decimal" value={tl} onChange={e= onFocus={e=>e.target.select()}>setTl(+e.target.value)} style={K.inp}/></div>
+            <div><FL>Largo total</FL><input type="number" inputMode="decimal" value={tl} onChange={e=>setTl(+e.target.value)} onFocus={e=>e.target.select()} style={K.inp}/></div>
             <div><FL>Unidad</FL><select value={us} onChange={e=>setUs(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}</select></div>
-            <div><FL>Cantidad de elementos</FL><input type="number" inputMode="numeric" value={ni} onChange={e= onFocus={e=>e.target.select()}>setNi(Math.max(1,+e.target.value))} min={1} style={K.inp}/></div>
-            <div><FL>Ancho de cada uno</FL><input type="number" inputMode="decimal" value={iw} onChange={e= onFocus={e=>e.target.select()}>setIw(+e.target.value)} step=".125" style={K.inp}/></div>
+            <div><FL>Cantidad de elementos</FL><input type="number" inputMode="numeric" value={ni} onChange={e=>setNi(Math.max(1,+e.target.value))} onFocus={e=>e.target.select()} min={1} style={K.inp}/></div>
+            <div><FL>Ancho de cada uno</FL><input type="number" inputMode="decimal" value={iw} onChange={e=>setIw(+e.target.value)} onFocus={e=>e.target.select()} step=".125" style={K.inp}/></div>
           </div>
           {gap>0?(
             <>
@@ -1039,7 +1039,7 @@ function DesignTools(){
           <CL>Razón áurea φ = 1.618</CL>
           <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>La proporción más armoniosa. Úsala para dimensionar muebles, marcos y puertas.</p>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12}}>
-            <div><FL>Dimensión base</FL><input type="number" inputMode="decimal" value={gv} onChange={e= onFocus={e=>e.target.select()}>setGv(e.target.value)} style={K.inp}/></div>
+            <div><FL>Dimensión base</FL><input type="number" inputMode="decimal" value={gv} onChange={e=>setGv(e.target.value)} onFocus={e=>e.target.select()} style={K.inp}/></div>
             <div><FL>Unidad</FL><select value={gu} onChange={e=>setGu(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}</select></div>
           </div>
           <div style={{display:"flex",gap:10,marginTop:16}}>
@@ -1055,8 +1055,8 @@ function DesignTools(){
           <CL>Triángulo rectángulo</CL>
           <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>Regla 3-4-5: si A=3, B=4 → C=5 = ángulo perfecto de 90°.</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div><FL>Lado A (pulgadas)</FL><input type="number" inputMode="decimal" value={a} onChange={e= onFocus={e=>e.target.select()}>setA(+e.target.value)} style={K.inp}/></div>
-            <div><FL>Lado B (pulgadas)</FL><input type="number" inputMode="decimal" value={b} onChange={e= onFocus={e=>e.target.select()}>setB(+e.target.value)} style={K.inp}/></div>
+            <div><FL>Lado A (pulgadas)</FL><input type="number" inputMode="decimal" value={a} onChange={e=>setA(+e.target.value)} onFocus={e=>e.target.select()} style={K.inp}/></div>
+            <div><FL>Lado B (pulgadas)</FL><input type="number" inputMode="decimal" value={b} onChange={e=>setB(+e.target.value)} onFocus={e=>e.target.select()} style={K.inp}/></div>
           </div>
           <div style={{display:"flex",gap:12,marginTop:16}}>
             <div style={{flex:1,background:C.field,borderRadius:12,padding:"14px",textAlign:"center"}}><div style={{fontSize:12,color:C.ink3,fontWeight:600}}>Hipotenusa C</div><div style={{fontSize:22,fontWeight:800,color:C.amber,marginTop:4}}>{fmt(hyp,4)}"</div><div style={{fontSize:12,color:C.ink3,marginTop:2}}>{toFrac(hyp,16)}</div></div>
@@ -1154,8 +1154,8 @@ function BoardTab({catalog}){
                       style={{...K.inp,textAlign:"center",padding:"10px 8px",fontSize:13,fontFamily:"monospace"}}/>
                   </div>
                 ))}
-                <div><FL>Cantidad</FL><input type="number" inputMode="numeric" value={row.qty||""} min={1} onChange={e= onFocus={e=>e.target.select()}>upd(row.id,"qty",e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
-                <div><FL>$/pie·tabla</FL><input type="number" inputMode="decimal" value={row.cpt||""} step=".01" onChange={e= onFocus={e=>e.target.select()}>upd(row.id,"cpt",+e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
+                <div><FL>Cantidad</FL><input type="number" inputMode="numeric" value={row.qty||""} min={1} onChange={e=>upd(row.id,"qty",e.target.value)} onFocus={e=>e.target.select()} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
+                <div><FL>$/pie·tabla</FL><input type="number" inputMode="decimal" value={row.cpt||""} step=".01" onChange={e=>upd(row.id,"cpt",+e.target.value)} onFocus={e=>e.target.select()} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
                 <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
                   <div style={{background:`${C.amber}15`,borderRadius:10,padding:"8px 6px",textAlign:"center"}}>
                     <div style={{fontSize:10,color:C.ink3,fontWeight:600}}>pie·tabla</div>
@@ -1489,14 +1489,14 @@ function CatalogTab({catalog,setCatalog}){
         <FL>Nombre</FL><input value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="Ej: Roble Blanco 4/4 Select" style={{...K.inp,marginBottom:14}}/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div><FL>Categoría</FL><select value={f.cat} onChange={e=>setF({...f,cat:e.target.value})} style={K.sel}>{["Blanda","Dura","Laminado","Otro"].map(c=><option key={c}>{c}</option>)}</select></div>
-          <div><FL>Grosor (pulgadas)</FL><input type="number" inputMode="decimal" value={f.thick} step=".25" placeholder="0.75" onChange={e= onFocus={e=>e.target.select()}>setF({...f,thick:e.target.value})} style={K.inp}/></div>
+          <div><FL>Grosor (pulgadas)</FL><input type="number" inputMode="decimal" value={f.thick} step=".25" placeholder="0.75" onChange={e=>setF({...f,thick:e.target.value} onFocus={e=>e.target.select()})} style={K.inp}/></div>
         </div>
         <FL style={{marginTop:12}}>Descripción</FL><input value={f.desc||""} onChange={e=>setF({...f,desc:e.target.value})} placeholder="Grado, acabado, características..." style={K.inp}/>
       </div>
       <div style={K.card}>
         <CL>Precio</CL>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10}}>
-          <div><FL>Costo ($)</FL><input type="number" inputMode="decimal" value={f.cost} step=".01" placeholder="0.00" onChange={e= onFocus={e=>e.target.select()}>setF({...f,cost:e.target.value})} style={K.inp}/></div>
+          <div><FL>Costo ($)</FL><input type="number" inputMode="decimal" value={f.cost} step=".01" placeholder="0.00" onChange={e=>setF({...f,cost:e.target.value} onFocus={e=>e.target.select()})} style={K.inp}/></div>
           <div><FL>Por unidad</FL><select value={f.cu} onChange={e=>setF({...f,cu:e.target.value})} style={K.sel}>{COST_U.map(u=><option key={u} value={u}>{u}</option>)}</select></div>
         </div>
         {+f.cost>0&&<div style={{marginTop:10,padding:"10px 14px",background:C.amberBg,borderRadius:10,borderLeft:`3px solid ${C.amber}`,fontSize:13}}><strong style={{color:C.amber}}>${(+f.cost).toFixed(2)}</strong> por {f.cu}{f.cu==="pie²"&&<span style={{color:C.ink3}}> · equiv. ${(+f.cost/0.0929).toFixed(2)}/m²</span>}{f.cu==="m²"&&<span style={{color:C.ink3}}> · equiv. ${(+f.cost*0.0929).toFixed(2)}/pie²</span>}</div>}
@@ -1504,7 +1504,7 @@ function CatalogTab({catalog,setCatalog}){
       <div style={K.card}>
         <CL>Inventario</CL>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10}}>
-          <div><FL>Stock</FL><input type="number" inputMode="numeric" value={f.stock} placeholder="0" onChange={e= onFocus={e=>e.target.select()}>setF({...f,stock:e.target.value})} style={K.inp}/></div>
+          <div><FL>Stock</FL><input type="number" inputMode="numeric" value={f.stock} placeholder="0" onChange={e=>setF({...f,stock:e.target.value} onFocus={e=>e.target.select()})} style={K.inp}/></div>
           <div><FL>Unidad</FL><select value={f.su||"pie²"} onChange={e=>setF({...f,su:e.target.value})} style={K.sel}>{STOCK_U.map(u=><option key={u} value={u}>{u}</option>)}</select></div>
         </div>
       </div>
@@ -1888,7 +1888,7 @@ function ProTab({catalog,projects}){
               {[["Ancho","w"],["Alto","h"]].map(([l,k])=>(
                 <div key={k}>
                   <FL style={{color:"#888"}}>{l} ({pu.label})</FL>
-                  <input type="number" inputMode="decimal" step={pu.step} value={newP[k]===""?"":fmtPro(+newP[k]||0)} onChange={e= onFocus={e=>e.target.select()}>setNewP({...newP,[k]:e.target.value===""?"":toBasePro(e.target.value)})}
+                  <input type="number" inputMode="decimal" step={pu.step} value={newP[k]===""?"":fmtPro(+newP[k]||0)} onChange={e=>setNewP({...newP,[k]:e.target.value===""?"":toBasePro(e.target.value)} onFocus={e=>e.target.select()})}
                     style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none"}}/>
                 </div>
               ))}
@@ -1902,7 +1902,7 @@ function ProTab({catalog,projects}){
             </div>
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12,marginBottom:12}}>
               <div style={{fontSize:13,color:"#888",paddingTop:6}}>Cantidad</div>
-              <input type="number" min={1} value={newP.qty} onChange={e= onFocus={e=>e.target.select()}>setNewP({...newP,qty:e.target.value})}
+              <input type="number" min={1} value={newP.qty} onChange={e=>setNewP({...newP,qty:e.target.value} onFocus={e=>e.target.select()})}
                 style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:16,outline:"none"}}/>
             </div>
             <button onClick={addPiece} disabled={!newP.name||newP.w===""||newP.h===""} style={{width:"100%",padding:"15px",background:(!newP.name||newP.w===""||newP.h==="")?"rgba(255,255,255,0.06)":C.proGold,color:(!newP.name||newP.w===""||newP.h==="")?"#444":"#1A1A28",border:"none",borderRadius:14,fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:(!newP.name||newP.w===""||newP.h==="")?"none":`0 4px 20px rgba(232,193,77,0.25)`}}>
@@ -1960,7 +1960,7 @@ function ProTab({catalog,projects}){
               {[["Ancho tablero","customW"],["Alto tablero","customH"]].map(([l,k])=>(
                 <div key={k}>
                   <FL style={{color:"#888"}}>{l} ({pu.label})</FL>
-                  <input type="number" inputMode="decimal" value={fmtPro(sheetCfg[k])} onChange={e= onFocus={e=>e.target.select()}>setSheetCfg({...sheetCfg,[k]:toBasePro(e.target.value)})}
+                  <input type="number" inputMode="decimal" value={fmtPro(sheetCfg[k])} onChange={e=>setSheetCfg({...sheetCfg,[k]:toBasePro(e.target.value)} onFocus={e=>e.target.select()})}
                     style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none"}}/>
                 </div>
               ))}
@@ -1990,7 +1990,7 @@ function ProTab({catalog,projects}){
           {/* Kerf */}
           <div style={{marginBottom:20}}>
             <FL style={{color:"#888"}}>Sangría de sierra - kerf ({pu.label})</FL>
-            <input type="number" inputMode="decimal" value={fmtPro(sheetCfg.kerfCM)} onChange={e= onFocus={e=>e.target.select()}>setSheetCfg({...sheetCfg,kerfCM:+toBasePro(e.target.value)})}
+            <input type="number" inputMode="decimal" value={fmtPro(sheetCfg.kerfCM)} onChange={e=>setSheetCfg({...sheetCfg,kerfCM:+toBasePro(e.target.value)} onFocus={e=>e.target.select()})}
               style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none",marginBottom:8}}/>
             <div style={{fontSize:12,color:"#444"}}>Típico: sierra circular 3mm · sierra de mesa 3.2mm · CNC 6mm</div>
           </div>
@@ -2126,7 +2126,7 @@ function ProTab({catalog,projects}){
                   {[["w","Ancho"],["h","Alto"],["d","Prof."]].map(([k,l])=>(
                     <div key={k}>
                       <FL style={{color:"#888"}}>{l}</FL>
-                      <input type="number" inputMode="decimal" step={pu.step} value={fmtPro(toBasePro(pDims[k]))} onChange={e= onFocus={e=>e.target.select()}>setPDims({...pDims,[k]:parseFloat(pu.fromBase(toBasePro(e.target.value)).toFixed(1))||0})}
+                      <input type="number" inputMode="decimal" step={pu.step} value={fmtPro(toBasePro(pDims[k]))} onChange={e=>setPDims({...pDims,[k]:parseFloat(pu.fromBase(toBasePro(e.target.value)).toFixed(1))||0} onFocus={e=>e.target.select()})}
                         style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 10px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:16,outline:"none"}}/>
                     </div>
                   ))}

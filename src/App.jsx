@@ -456,48 +456,45 @@ function CombinedConverter(){
     const open = isFrom ? showFrom : showTo;
     function handleOpen(e){
       e.stopPropagation();
-      if(isFrom){ setShowTo(false); setShowFrom(function(o){return !o;}); }
-      else       { setShowFrom(false); setShowTo(function(o){return !o;}); }
+      if(isFrom){ setShowTo(false); setShowFrom(o=>!o); }
+      else       { setShowFrom(false); setShowTo(o=>!o); }
     }
     function handleClose(){ setShowFrom(false); setShowTo(false); }
+    const label = isFrom ? "De" : "A";
     return(
-      React.createElement("div",{style:{flex:1,position:"relative"}},
-        React.createElement(FL,null,isFrom?"De":"A"),
-        React.createElement("button",{
-          onPointerDown:handleOpen,
-          style:{width:"100%",padding:"11px 12px",borderRadius:12,
-            border:"1.5px solid "+(open?C.amber:C.border),
+      <div style={{flex:1,position:"relative"}}>
+        <FL>{label}</FL>
+        <button onPointerDown={handleOpen}
+          style={{width:"100%",padding:"11px 12px",borderRadius:12,
+            border:`1.5px solid ${open?C.amber:C.border}`,
             background:C.field,color:C.ink1,fontSize:14,fontWeight:700,
             textAlign:"left",cursor:"pointer",display:"flex",
-            justifyContent:"space-between",alignItems:"center"}},
-          React.createElement("span",{style:{color:value==="infrac"?C.amber:C.ink1}},
-            (CONV_UNITS.find(function(u){return u.id===value;})||{short:value}).short),
-          React.createElement("span",{style:{color:C.ink3,fontSize:11}},open?"▲":"▼")
-        ),
-        open&&React.createElement("div",{
-          style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,
-            background:C.white,borderRadius:12,
-            border:"1.5px solid "+C.amber,zIndex:100,
-            boxShadow:"0 8px 28px rgba(0,0,0,0.14)",overflow:"hidden"}},
-          CONV_UNITS.map(function(u){
-            return React.createElement("button",{
-              key:u.id,
-              onPointerDown:function(e){
-                e.preventDefault(); onChange(u.id); handleClose(); clearAll();
-              },
-              style:{width:"100%",padding:"13px 16px",
-                background:value===u.id?C.amber+"18":C.white,
-                border:"none",borderBottom:"1px solid "+C.border,
-                textAlign:"left",fontSize:14,
-                fontWeight:value===u.id?700:500,
-                color:value===u.id?C.amber:C.ink2,cursor:"pointer"}},
-              u.label,
-              u.id==="infrac"&&React.createElement("span",
-                {style:{marginLeft:8,fontSize:11,color:C.green,fontWeight:700}},"✦")
-            );
-          })
-        )
-      )
+            justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{color:value==="infrac"?C.amber:C.ink1}}>
+            {(CONV_UNITS.find(u=>u.id===value)||{short:value}).short}
+          </span>
+          <span style={{color:C.ink3,fontSize:11}}>{open?"▲":"▼"}</span>
+        </button>
+        {open&&(
+          <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,
+            background:C.white,borderRadius:12,border:`1.5px solid ${C.amber}`,
+            zIndex:100,boxShadow:"0 8px 28px rgba(0,0,0,0.14)",overflow:"hidden"}}>
+            {CONV_UNITS.map(u=>(
+              <button key={u.id}
+                onPointerDown={e=>{e.preventDefault();onChange(u.id);handleClose();clearAll();}}
+                style={{width:"100%",padding:"13px 16px",
+                  background:value===u.id?`${C.amber}18`:C.white,
+                  border:"none",borderBottom:`1px solid ${C.border}`,
+                  textAlign:"left",fontSize:14,
+                  fontWeight:value===u.id?700:500,
+                  color:value===u.id?C.amber:C.ink2,cursor:"pointer"}}>
+                {u.label}
+                {u.id==="infrac"&&<span style={{marginLeft:8,fontSize:11,color:C.green,fontWeight:700}}>✦</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -565,34 +562,34 @@ function CombinedConverter(){
         flexShrink:0,position:"relative",zIndex:50}}>
         <UPick value={fromU} onChange={setFromSel} isFrom={true}/>
         <button
-          onPointerDown={function(e){e.preventDefault(); swapUnits();}}
+          onPointerDown={e=>{e.preventDefault(); swapUnits();}}
           style={{width:42,height:42,borderRadius:12,background:C.amber,
             border:"none",fontSize:18,color:C.white,fontWeight:700,
             flexShrink:0,marginTop:22,
             boxShadow:"0 3px 10px "+C.amber+"55",cursor:"pointer"}}>
-          {"\u21c4"}
+          "⇄"
         </button>
         <UPick value={toU} onChange={setToU} isFrom={false}/>
       </div>
 
       <div style={{flex:1,background:"#EDEAE5",borderRadius:18,padding:"8px",
         display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden"}}
-        onPointerDown={function(){setShowFrom(false); setShowTo(false);}}>
+        onPointerDown={()=>{ setShowFrom(false); setShowTo(false); }}>
 
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["7","8","9"].map(function(d){return(
-            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+          {["7","8","9"].map(d=>(
+            <KB2 key={d} label={d} onPress={()=>digit(d)}
               style={{height:"100%",fontSize:20}}/>
-          );})}
-          <KB2 label={"\u232b"} onPress={backspace}
+          ))}
+          <KB2 label="⌫" onPress={backspace}
             bg="#D4CEC7" color={C.ink2} style={{height:"100%",fontSize:18}}/>
         </div>
 
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["4","5","6"].map(function(d){return(
-            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+          {["4","5","6"].map(d=>(
+            <KB2 key={d} label={d} onPress={()=>digit(d)}
               style={{height:"100%",fontSize:20}}/>
-          );})}
+          ))}
           <KB2 label="/" onPress={pressSlash}
             bg={slashOn?C.amber:"#D4CEC7"}
             color={slashOn?C.white:C.amber}
@@ -600,10 +597,10 @@ function CombinedConverter(){
         </div>
 
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["1","2","3"].map(function(d){return(
-            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+          {["1","2","3"].map(d=>(
+            <KB2 key={d} label={d} onPress={()=>digit(d)}
               style={{height:"100%",fontSize:20}}/>
-          );})}
+          ))}
           <KB2 label="C" onPress={clearAll}
             bg={C.red+"15"} color={C.red}
             style={{height:"100%",border:"1.5px solid "+C.red+"33"}}/>
@@ -623,15 +620,12 @@ function CombinedConverter(){
         </div>
 
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {[[1,"\u00b9\u2044\u2081\u2086"],[2,"\u215b"],[4,"\u00bc"],[8,"\u00bd"]].map(function(pair){
-            const n16=pair[0], lbl=pair[1];
-            return(
-              <KB2 key={n16} label={lbl} onPress={function(){addFrac(n16);}}
-                bg={C.amber+"18"} color={C.amber}
-                style={{height:"100%",fontSize:n16===1?12:18,
-                  border:"1px solid "+C.amberBd}}/>
-            );
-          })}
+          {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"]].map(([n16,lbl])=>(
+            <KB2 key={n16} label={lbl} onPress={()=>addFrac(n16)}
+              bg={`${C.amber}18`} color={C.amber}
+              style={{height:"100%",fontSize:n16===1?12:18,
+                border:`1px solid ${C.amberBd}`}}/>
+          ))}
         </div>
 
         {slashOn&&(
@@ -651,7 +645,7 @@ function CombinedConverter(){
 
 function KB2({label,onPress,bg,color,style:st}){
   return(
-    <button onPointerDown={function(e){e.preventDefault();onPress();}}
+    <button onPointerDown={e=>{e.preventDefault();onPress();}}
       style={{borderRadius:11,border:"none",cursor:"pointer",fontWeight:800,
         lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
         display:"flex",alignItems:"center",justifyContent:"center",

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // ═══════════════════════════════════════════════════════════════
-//  CUTWISE — Calculadora Profesional de Carpintería
+//  CUTWISE -- Calculadora Profesional de Carpintería
 //  Creada por Jorge Vinicio Meléndez
 //  Grain & Brand Studio, LLC
 // ═══════════════════════════════════════════════════════════════
@@ -85,7 +85,7 @@ const FINISHES=[
   {name:"Chalk Paint",type:"Pintura",uso:"Muebles vintage, decoración",pros:"Sin lija previa, muchos colores",cons:"Necesita cera o sellador",tip:"Terminar siempre con cera o barniz"},
 ];
 const NAILS=[["2d","1\"","25mm"],["3d","1¼\"","32mm"],["4d","1½\"","38mm"],["6d","2\"","51mm"],["8d","2½\"","64mm"],["10d","3\"","76mm"],["16d","3½\"","89mm"],["20d","4\"","102mm"]];
-const SCREWS=[["#6","3.5mm","7/64\"","Uso general, MDF"],["#8","4.2mm","9/64\"","El más común — estructuras"],["#10","4.8mm","5/32\"","Juntas resistentes"],["#12","5.5mm","3/16\"","Madera dura, vigas"]];
+const SCREWS=[["#6","3.5mm","7/64\"","Uso general, MDF"],["#8","4.2mm","9/64\"","El más común -- estructuras"],["#10","4.8mm","5/32\"","Juntas resistentes"],["#12","5.5mm","3/16\"","Madera dura, vigas"]];
 const TIPS=[
   {icon:"📐",title:"Regla 3-4-5",body:"Para cuadrar una esquina a 90°: mide 3 unidades en un lado, 4 en el otro, la diagonal debe medir exactamente 5. Usa cualquier unidad."},
   {icon:"🎯",title:"Encontrar el centro",body:"Traza dos diagonales de esquina a esquina. Donde se cruzan es el centro exacto. Funciona en cualquier rectángulo."},
@@ -188,7 +188,7 @@ const G=`
   body{background:${C.bg};-webkit-font-smoothing:antialiased;}
   input,select,textarea,button{font-family:inherit;}
   input[type=number]::-webkit-inner-spin-button{opacity:.4;}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:${C.amber}!important;box-shadow:0 0 0 3px rgba(212,144,10,.15);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:${C.amber}!important;box-shadow:0 0 0 3px rgba(212,144,10,.15);}  input[type=number]:focus{-webkit-user-select:all;user-select:all;}
   ::-webkit-scrollbar{display:none;}
   @keyframes up{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .up{animation:up .22s ease both;}
@@ -207,7 +207,7 @@ export default function App(){
   const[proUnlocked]=useLS("cw_pro",false);
 
   const TABS=[
-    {id:"calc",icon:"⇄",label:"Calcular"},
+    {id:"calc",icon:"⇄",label:"Unidades"},
     {id:"boardfoot",icon:"📐",label:"Madera"},
     {id:"projects",icon:"📋",label:"Proyectos"},
     {id:"catalog",icon:"🪵",label:"Mis Maderas"},
@@ -230,7 +230,7 @@ export default function App(){
               <div style={{fontSize:26,fontWeight:900,letterSpacing:-1,lineHeight:1,color:C.ink1}}>
                 Cut<span style={{color:C.amber}}>Wise</span>
               </div>
-              <div style={{fontSize:12,color:C.ink3,marginTop:2,letterSpacing:.3}}>Calculadora de carpintería</div>
+              <div style={{fontSize:12,color:C.ink3,marginTop:2,letterSpacing:.3}}>Herramienta de carpintero</div>
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function App(){
         {tab==="pro"       &&<ProTab catalog={catalog} projects={projects}/>}
       </div>
 
-      {/* NAV INFERIOR — más grande y fácil de tocar */}
+      {/* NAV INFERIOR -- más grande y fácil de tocar */}
       <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:tab==="pro"?"#111120":C.white,borderTop:`1px solid ${tab==="pro"?"rgba(255,255,255,0.08)":C.border}`,display:"flex",zIndex:30,paddingBottom:"env(safe-area-inset-bottom,10px)",boxShadow:"0 -4px 24px rgba(0,0,0,0.10)",transition:"background .3s"}}>
         {TABS.map(t=>{
           const on=tab===t.id;
@@ -275,14 +275,14 @@ export default function App(){
 
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
-//  CALCULAR — Convertir + Taller + Diseño
+//  CALCULAR -- Convertir + Taller + Diseño
 // ═══════════════════════════════════════════════════════════
 function CalcTab(){
   const[mode,setMode]=useState("convert");
   return(
     <div>
       <div style={{display:"flex",background:C.white,borderRadius:14,padding:4,marginBottom:16,boxShadow:"0 1px 5px rgba(0,0,0,0.07)"}}>
-        {[["convert","Convertidor"],["workshop","Calc. Taller"],["tools","Diseño"]].map(([k,l])=>(
+        {[["convert","Convertidor"],["workshop","Calculadora"],["tools","Geometría"]].map(([k,l])=>(
           <button key={k} onClick={()=>setMode(k)} style={{flex:1,padding:"11px 4px",borderRadius:11,border:"none",fontSize:14,fontWeight:600,background:mode===k?C.amber:"transparent",color:mode===k?C.white:C.ink3,transition:"all .2s",cursor:"pointer"}}>{l}</button>
         ))}
       </div>
@@ -293,7 +293,7 @@ function CalcTab(){
   );
 }
 
-// ── CONVERSOR UNIFICADO — teclado único inteligente ──────────
+// ── CONVERSOR UNIFICADO -- teclado único inteligente ──────────
 // Un solo teclado para todo. / activa fracción automáticamente.
 // Dígitos aparecen inmediatamente en pantalla.
 const CONV_UNITS=[
@@ -344,7 +344,7 @@ function CombinedConverter(){
         // fracción manual en progreso
         s+=(inAcc>0?`${inAcc} `:"")+`${fracNum||""}/${fracDen||"_"}"`;
       } else if(buf){
-        // dígitos activos sin confirmar — MOSTRAR INMEDIATAMENTE
+        // dígitos activos sin confirmar -- MOSTRAR INMEDIATAMENTE
         s+=buf;
       } else {
         // medida ya confirmada
@@ -363,7 +363,7 @@ function CombinedConverter(){
   // ── Resultado convertido ──────────────────────────────────
   function getResult(){
     const inches=inputInches;
-    if(!hasInput) return "—";
+    if(!hasInput) return "--";
     if(toU==="infrac"){
       const ft2=Math.floor(inches/12),rem=inches%12;
       const inW=Math.floor(rem),fr=Math.round((rem-inW)*16);
@@ -414,7 +414,7 @@ function CombinedConverter(){
   }
 
   function pressSlash(){
-    // Activa fracción automáticamente — guarda lo que hay en buf como numerador
+    // Activa fracción automáticamente -- guarda lo que hay en buf como numerador
     setFracNum(buf||"1");
     setBuf("");
     setFracDen("");
@@ -497,12 +497,12 @@ function CombinedConverter(){
     <div style={{display:"flex",flexDirection:"column",
       height:"calc(100vh - 215px)",gap:8,userSelect:"none",WebkitUserSelect:"none"}}>
 
-      {/* ── PANTALLA FIJA 148px — NUNCA CRECE ── */}
+      {/* ── PANTALLA FIJA 148px -- NUNCA CRECE ── */}
       <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",
         borderRadius:18,padding:"12px 14px",flexShrink:0,height:148}}>
         <div style={{display:"flex",gap:10,height:"100%"}}>
 
-          {/* Izq — lo que escribes */}
+          {/* Izq -- lo que escribes */}
           <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
             <div style={{fontSize:10,color:"#555",fontWeight:700,
               letterSpacing:.8,textTransform:"uppercase"}}>
@@ -521,7 +521,7 @@ function CombinedConverter(){
 
           <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
 
-          {/* Der — resultado */}
+          {/* Der -- resultado */}
           <div style={{width:118,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
             <div style={{fontSize:10,color:"#555",fontWeight:700,
               letterSpacing:.8,textTransform:"uppercase"}}>
@@ -536,7 +536,7 @@ function CombinedConverter(){
                 color:hasInput?C.white:"#333",
                 letterSpacing:-.5,lineHeight:1.2,fontFamily:"monospace",
                 wordBreak:"break-word"}}>
-                {hasInput?getResult():"—"}
+                {hasInput?getResult():"--"}
               </div>
             </div>
           </div>
@@ -560,7 +560,7 @@ function CombinedConverter(){
           lbl="A"/>
       </div>
 
-      {/* ── TECLADO ÚNICO — siempre igual, flex:1 ── */}
+      {/* ── TECLADO ÚNICO -- siempre igual, flex:1 ── */}
       <div style={{flex:1,background:"#EDEAE5",borderRadius:18,padding:"8px",
         display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden"}}
         onPointerDown={()=>{ setShowFrom(false); setShowTo(false); }}>
@@ -628,280 +628,12 @@ function CombinedConverter(){
             border:`1px solid ${C.amberBd}`}}>
             <span style={{fontSize:12,color:C.amber,fontWeight:700,fontFamily:"monospace"}}>
               {slashOn
-                ?`Fracción: ${fracNum||"?"}/${fracDen||"_"}" — presiona in" para confirmar`
+                ?`Fracción: ${fracNum||"?"}/${fracDen||"_"}" -- presiona in" para confirmar`
                 :`+${(()=>{const g=gcd(fracN,16);return `${fracN/g}/${16/g}"`;})()}`
               }
             </span>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function KB2({label,onPress,bg,color,style:st}){
-  return(
-    <button onPointerDown={e=>{e.preventDefault();onPress();}}
-      style={{borderRadius:11,border:"none",cursor:"pointer",fontWeight:800,
-        lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:17,background:bg||C.white,color:color||C.ink1,
-        boxShadow:"0 1px 3px rgba(0,0,0,0.09)",
-        transition:"opacity .1s",...(st||{})}}>
-      {label}
-    </button>
-  );
-}
-
-function CombinedConverter(){
-  const[fromU, setFromU] = useState("in");
-  const[toU,   setToU]   = useState("mm");
-  const[showFrom,setShowFrom] = useState(false);
-  const[showTo,  setShowTo]   = useState(false);
-
-  // Buffer numérico
-  const[buf,    setBuf]   = useState("");
-  const[ftAcc,  setFtAcc] = useState(0);
-  const[inAcc,  setInAcc] = useState(0);
-  const[fracN,  setFracN] = useState(0);
-  const[slashOn,setSlash] = useState(false);
-  const[fracNum,setFracNum]= useState("");
-  const[fracDen,setFracDen]= useState("");
-
-  // ── Valor en pulgadas decimales ──────────────────────────
-  function getInputInches(){
-    if(fromU==="infrac") return ftAcc*12 + inAcc + fracN/16;
-    const n = parseFloat(buf)||0;
-    return cvt(n, fromU==="in"?fromU:fromU, "in");
-  }
-  const inputInches = getInputInches();
-  const hasInput = fromU==="infrac" ? inputInches>0 : (buf!==""&&parseFloat(buf)!==0);
-
-  // ── Resultado ────────────────────────────────────────────
-  function getResult(){
-    const inches = inputInches;
-    if(toU==="infrac"){
-      const total = inches;
-      const ft = Math.floor(total/12);
-      const rem = total%12;
-      const inW = Math.floor(rem);
-      const frac = Math.round((rem-inW)*16);
-      const g = frac>0?gcd(frac,16):1;
-      let s = "";
-      if(ft>0) s+=`${ft} ft `;
-      if(inW>0||frac>0){
-        s+=inW>0?`${inW}`:"";
-        if(frac>0) s+=(inW>0?" ":"")+`${frac/g}/${16/g}"`;
-        else s+='"';
-      }
-      return s||"0";
-    }
-    if(toU==="in") return fmt(cvt(inches,"in","in"),5)+'"';
-    return fmt(cvt(inches,"in",toU),5)+" "+CONV_UNITS.find(u=>u.id===toU)?.short;
-  }
-
-  // ── Display del valor ingresado ──────────────────────────
-  function inputDisplay(){
-    if(fromU==="infrac"){
-      const parts=[];
-      if(ftAcc>0) parts.push(`${ftAcc} ft`);
-      if(inAcc>0||fracN>0){
-        let s=inAcc>0?`${inAcc}`:"";
-        if(fracN>0){const g=gcd(fracN,16);s+=(s?" ":"")+`${fracN/g}/${16/g}"`;}
-        else s+='"';
-        parts.push(s);
-      }
-      if(slashOn) return (fracNum||"?")+"/"+( fracDen||"_")+'"';
-      return parts.length?parts.join(" "):"0";
-    }
-    return buf||"0";
-  }
-
-  // ── Teclado — dígito ─────────────────────────────────────
-  function digit(d){
-    if(fromU==="infrac"){
-      if(slashOn) setFracDen(v=>(v+d).slice(0,3));
-      else setBuf(v=>(v==="0"?"":v+d).slice(0,6));
-    } else {
-      setBuf(v=>(v+d).replace(/^0+(?=\d)/,"").slice(0,8));
-    }
-  }
-
-  // ── Confirmar ft / in ────────────────────────────────────
-  function confirmFt(){
-    const n=parseFloat(buf)||0;
-    if(n>0)setFtAcc(n);
-    setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
-  }
-  function confirmIn(){
-    if(slashOn){
-      const n=parseFloat(fracNum)||0,d=parseFloat(fracDen)||16;
-      setFracN(v=>v+Math.round((n/d)*16));
-      setSlash(false);setFracDen("");setFracNum("");setBuf("");
-    } else {
-      const n=parseFloat(buf)||0;
-      if(n>0)setInAcc(n);
-      setBuf("");setSlash(false);
-    }
-  }
-  function slash(){ setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true); }
-
-  function addFrac(n16){ setFracN(v=>v+n16); }
-  function backspace(){
-    if(fromU==="infrac"){
-      if(slashOn){setFracDen(v=>v.slice(0,-1));return;}
-      if(buf){setBuf(v=>v.slice(0,-1));return;}
-      if(fracN>0){setFracN(0);return;}
-      if(inAcc>0){setInAcc(0);return;}
-      if(ftAcc>0){setFtAcc(0);return;}
-    } else {
-      setBuf(v=>v.slice(0,-1));
-    }
-  }
-  function clearAll(){
-    setBuf(""); setFtAcc(0); setInAcc(0); setFracN(0);
-    setSlash(false); setFracDen(""); setFracNum("");
-  }
-  function swapUnits(){
-    setFromU(toU); setToU(fromU); clearAll();
-  }
-
-  // ── Selector de unidad ───────────────────────────────────
-  function UnitPicker({value, onChange, open, setOpen, label}){
-    return(
-      <div style={{flex:1,position:"relative"}}>
-        <FL>{label}</FL>
-        <button onClick={()=>setOpen(o=>!o)} style={{
-          width:"100%",padding:"11px 12px",borderRadius:12,
-          border:`1.5px solid ${open?C.amber:C.border}`,
-          background:C.field,color:C.ink1,fontSize:14,fontWeight:700,
-          textAlign:"left",cursor:"pointer",display:"flex",
-          justifyContent:"space-between",alignItems:"center",
-        }}>
-          <span>{CONV_UNITS.find(u=>u.id===value)?.short}</span>
-          <span style={{color:C.ink3,fontSize:12}}>{open?"▲":"▼"}</span>
-        </button>
-        {open&&(
-          <div style={{position:"absolute",top:"100%",left:0,right:0,background:C.white,
-            borderRadius:12,border:`1.5px solid ${C.amber}`,zIndex:50,
-            boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden",marginTop:4}}>
-            {CONV_UNITS.map(u=>(
-              <button key={u.id} onClick={()=>{onChange(u.id);setOpen(false);clearAll();}}
-                style={{width:"100%",padding:"12px 14px",background:value===u.id?`${C.amber}15`:C.white,
-                  border:"none",borderBottom:`1px solid ${C.border}`,textAlign:"left",
-                  fontSize:14,fontWeight:value===u.id?700:500,
-                  color:value===u.id?C.amber:C.ink2,cursor:"pointer"}}>
-                {u.label}
-                {u.id==="infrac"&&<span style={{marginLeft:8,fontSize:11,color:C.green,fontWeight:700}}>Nuevo ✦</span>}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const isFracInput = fromU==="infrac";
-  const GAP = 5;
-
-  return(
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 215px)",gap:8}}>
-
-      {/* ── PANTALLA FIJA ── */}
-      <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",borderRadius:18,
-        padding:"12px 14px",flexShrink:0,height:148}}>
-        <div style={{display:"flex",gap:10,height:"100%"}}>
-
-          {/* Izq — input */}
-          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>
-              {CONV_UNITS.find(u=>u.id===fromU)?.label}
-            </div>
-            <div style={{fontSize:28,fontWeight:900,color:C.white,fontFamily:"monospace",
-              letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {inputDisplay()}
-            </div>
-            {hasInput&&isFracInput&&(
-              <div style={{display:"flex",gap:8}}>
-                <span style={{fontSize:10,color:"#888",fontFamily:"monospace"}}>{fmt(inputInches,4)}"</span>
-                <span style={{fontSize:10,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(inputInches,"in","mm"),1)}mm</span>
-              </div>
-            )}
-            {hasInput&&!isFracInput&&(
-              <div style={{fontSize:10,color:"#666",fontFamily:"monospace"}}>
-                {fromU==="in"?toFrac(parseFloat(buf)||0,16):""}
-              </div>
-            )}
-          </div>
-
-          <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
-
-          {/* Der — resultado */}
-          <div style={{width:120,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
-            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>
-              {CONV_UNITS.find(u=>u.id===toU)?.label}
-            </div>
-            <div style={{flex:1,background:hasInput?`linear-gradient(135deg,${C.amber},#9A6005)`:"rgba(255,255,255,0.05)",
-              borderRadius:12,padding:"8px",textAlign:"center",
-              display:"flex",flexDirection:"column",justifyContent:"center",
-              transition:"background .2s"}}>
-              {hasInput?(
-                <>
-                  <div style={{fontSize:toU==="infrac"?16:22,fontWeight:900,color:C.white,
-                    letterSpacing:-.5,lineHeight:1.1,fontFamily:"monospace",wordBreak:"break-all"}}>
-                    {getResult()}
-                  </div>
-                </>
-              ):(
-                <div style={{fontSize:11,color:"#333"}}>—</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── SELECTORES DE UNIDAD ── */}
-      <div style={{display:"flex",gap:8,alignItems:"flex-start",flexShrink:0,position:"relative",zIndex:40}}>
-        <UnitPicker value={fromU} onChange={setFromU} open={showFrom} setOpen={setShowFrom} label="De"/>
-        <button onClick={swapUnits} style={{width:42,height:42,borderRadius:12,background:C.amber,
-          border:"none",fontSize:18,color:C.white,fontWeight:700,flexShrink:0,marginTop:22,
-          boxShadow:`0 3px 10px ${C.amber}55`,cursor:"pointer"}}>⇄</button>
-        <UnitPicker value={toU} onChange={setToU} open={showTo} setOpen={setShowTo} label="A"/>
-      </div>
-
-      {/* ── TECLADO PROPIO — ocupa todo el resto ── */}
-      <div style={{flex:1,background:"#EDEAE5",borderRadius:18,padding:"8px",
-        display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden"}}>
-
-        {/* Fila fracción — solo si fromU es infrac */}
-        {isFracInput&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr",gap:GAP,flex:"0 0 auto"}}>
-            <KB2 label="ft"    onPress={confirmFt}    bg={C.amber}       color={C.white} style={{fontSize:14}}/>
-            <KB2 label='in "'  onPress={confirmIn}    bg={C.amber}       color={C.white} style={{fontSize:13}}/>
-            <KB2 label="/"     onPress={slash}        bg="#D4CEC7"       color={C.amber} style={{fontSize:18}}/>
-            <KB2 label="¼"    onPress={()=>addFrac(4)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:15,border:`1px solid ${C.amberBd}`}}/>
-            <KB2 label="½"    onPress={()=>addFrac(8)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:15,border:`1px solid ${C.amberBd}`}}/>
-            <KB2 label="¹⁄₁₆" onPress={()=>addFrac(1)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:12,border:`1px solid ${C.amberBd}`}}/>
-          </div>
-        )}
-
-        {/* Filas numéricas */}
-        {[["7","8","9"],["4","5","6"],["1","2","3"]].map(row=>(
-          <div key={row[0]} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP,flex:1}}>
-            {row.map(d=><KB2 key={d} label={d} onPress={()=>digit(d)} style={{height:"100%"}}/>)}
-            {row[0]==="7"&&<KB2 label="⌫" onPress={backspace} bg="#D4CEC7" color={C.ink2} style={{height:"100%"}}/>}
-            {row[0]==="4"&&<KB2 label={isFracInput?"¼":"."} onPress={isFracInput?()=>addFrac(4):()=>{if(!buf.includes("."))digit(".");}} bg={isFracInput?`${C.amber}18`:C.white} color={isFracInput?C.amber:C.ink1} style={{height:"100%",fontSize:isFracInput?16:18,border:isFracInput?`1px solid ${C.amberBd}`:"none"}}/>}
-            {row[0]==="1"&&<KB2 label={isFracInput?"½":"C"} onPress={isFracInput?()=>addFrac(8):clearAll} bg={isFracInput?`${C.amber}18`:`${C.red}15`} color={isFracInput?C.amber:C.red} style={{height:"100%",fontSize:isFracInput?16:15,border:isFracInput?`1px solid ${C.amberBd}`:`1.5px solid ${C.red}33`}}/>}
-          </div>
-        ))}
-
-        {/* Última fila: . 0 C */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP,flex:1}}>
-          <KB2 label="." onPress={()=>{if(!isFracInput&&!buf.includes("."))digit(".");}} bg={isFracInput?"#D8D0C8":C.white} color={isFracInput?C.ink4:C.ink1} style={{height:"100%"}}/>
-          <KB2 label="0" onPress={()=>digit("0")} style={{height:"100%"}}/>
-          <KB2 label={isFracInput?"¾":""} onPress={isFracInput?()=>addFrac(12):()=>{}} bg={isFracInput?`${C.amber}18`:"transparent"} color={isFracInput?C.amber:C.white} style={{height:"100%",fontSize:16,border:isFracInput?`1px solid ${C.amberBd}`:"none"}}/>
-          <KB2 label="C" onPress={clearAll} bg={`${C.red}15`} color={C.red} style={{height:"100%",border:`1.5px solid ${C.red}33`}}/>
-        </div>
       </div>
     </div>
   );
@@ -922,8 +654,7 @@ function KB2({label,onPress,bg,color,style:st}){
   );
 }
 
-// ── MODO TALLER — Calculadora de construcción completa ───────
-// Flujo: dígitos → ft|in|/ → operación +−×÷ → más medidas → =
+// ── MODO TALLER -- Calculadora de construcción completa ───────
 // Todo en pantalla fija, sin scroll, sin teclado del sistema
 function WorkshopMode(){
   // ── Estado ────────────────────────────────────────────────
@@ -1093,7 +824,7 @@ function WorkshopMode(){
     return `${n16/g}/${16/g}"`;
   }
 
-  // altura de fila del teclado — calculada para llenar pantalla sin scroll
+  // altura de fila del teclado -- calculada para llenar pantalla sin scroll
   const ROW = "calc((100vh - 340px) / 8)";
   const GAP = 5;
 
@@ -1105,7 +836,7 @@ function WorkshopMode(){
       gap:8,
     }}>
 
-      {/* ══ PANTALLA FIJA — nunca cambia de tamaño ════════════ */}
+      {/* ══ PANTALLA FIJA -- nunca cambia de tamaño ════════════ */}
       <div style={{
         background:"linear-gradient(160deg,#1A1A1C,#252528)",
         borderRadius:18, padding:"14px 16px",
@@ -1114,7 +845,7 @@ function WorkshopMode(){
       }}>
         <div style={{display:"flex",gap:12,height:"100%"}}>
 
-          {/* Izquierda — entrada */}
+          {/* Izquierda -- entrada */}
           <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
             <div>
               {/* Cinta */}
@@ -1127,7 +858,7 @@ function WorkshopMode(){
               <div style={{fontSize:11,color:C.amber,fontWeight:700,minHeight:16}}>
                 {op||""}
               </div>
-              {/* Número actual — grande */}
+              {/* Número actual -- grande */}
               <div style={{fontSize:30,fontWeight:900,color:C.white,fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 {numDisplay()}
               </div>
@@ -1143,7 +874,7 @@ function WorkshopMode(){
           {/* Divisor */}
           <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
 
-          {/* Derecha — resultado, siempre presente */}
+          {/* Derecha -- resultado, siempre presente */}
           <div style={{width:118,flexShrink:0,display:"flex",flexDirection:"column",gap:6}}>
             {/* Selector unidad */}
             <select value={to} onChange={e=>setTo(e.target.value)}
@@ -1152,7 +883,7 @@ function WorkshopMode(){
                 fontWeight:700,outline:"none",cursor:"pointer",width:"100%"}}>
               {UNITS.map(u=><option key={u} value={u} style={{background:"#1A1A1C"}}>{UL[u]}</option>)}
             </select>
-            {/* Resultado — caja siempre visible, cambia color cuando hay valor */}
+            {/* Resultado -- caja siempre visible, cambia color cuando hay valor */}
             <div style={{
               flex:1,
               background:hasResult
@@ -1165,13 +896,13 @@ function WorkshopMode(){
             }}>
               <div style={{fontSize:24,fontWeight:900,color:hasResult?C.white:"#333",
                 letterSpacing:-.5,lineHeight:1,fontFamily:"monospace"}}>
-                {hasResult?fmt(resConverted,3):"—"}
+                {hasResult?fmt(resConverted,3):"--"}
               </div>
               <div style={{fontSize:10,color:hasResult?"rgba(255,255,255,.65)":"#333",marginTop:3}}>
                 {US[to]}
               </div>
             </div>
-            {/* Fracción acumulada — siempre en su espacio */}
+            {/* Fracción acumulada -- siempre en su espacio */}
             <div style={{
               height:22,
               background:fracN>0?`${C.amber}22`:"transparent",
@@ -1186,7 +917,7 @@ function WorkshopMode(){
         </div>
       </div>
 
-      {/* ══ TECLADO FIJO — ocupa todo el espacio restante ═════ */}
+      {/* ══ TECLADO FIJO -- ocupa todo el espacio restante ═════ */}
       <div style={{
         flex:1,           // toma todo el espacio que sobre
         background:"#EDEAE5",
@@ -1279,16 +1010,16 @@ function DesignTools(){
       {tool==="spacing"&&(
         <div style={K.card}>
           <CL>Espaciado uniforme</CL>
-          <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>Para estantes, balusters, tornillos — distribución equidistante automática.</p>
+          <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>Para estantes, balusters, tornillos -- distribución equidistante automática.</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div><FL>Largo total</FL><input type="number" inputMode="decimal" value={tl} onChange={e=>setTl(+e.target.value)} style={K.inp}/></div>
+            <div><FL>Largo total</FL><input type="number" inputMode="decimal" value={tl} onChange={e= onFocus={e=>e.target.select()}>setTl(+e.target.value)} style={K.inp}/></div>
             <div><FL>Unidad</FL><select value={us} onChange={e=>setUs(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}</select></div>
-            <div><FL>Cantidad de elementos</FL><input type="number" inputMode="numeric" value={ni} onChange={e=>setNi(Math.max(1,+e.target.value))} min={1} style={K.inp}/></div>
-            <div><FL>Ancho de cada uno</FL><input type="number" inputMode="decimal" value={iw} onChange={e=>setIw(+e.target.value)} step=".125" style={K.inp}/></div>
+            <div><FL>Cantidad de elementos</FL><input type="number" inputMode="numeric" value={ni} onChange={e= onFocus={e=>e.target.select()}>setNi(Math.max(1,+e.target.value))} min={1} style={K.inp}/></div>
+            <div><FL>Ancho de cada uno</FL><input type="number" inputMode="decimal" value={iw} onChange={e= onFocus={e=>e.target.select()}>setIw(+e.target.value)} step=".125" style={K.inp}/></div>
           </div>
           {gap>0?(
             <>
-              <MR top={`${fmt(cvt(gap,"in",us),4)} ${US[us]}`} bot={`${toFrac(gap,16)} — ${ni+1} espacios iguales`}/>
+              <MR top={`${fmt(cvt(gap,"in",us),4)} ${US[us]}`} bot={`${toFrac(gap,16)} -- ${ni+1} espacios iguales`}/>
               <FL style={{marginTop:16}}>Centro de cada elemento desde el inicio</FL>
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
                 {positions.map((p,i)=>(
@@ -1308,7 +1039,7 @@ function DesignTools(){
           <CL>Razón áurea φ = 1.618</CL>
           <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>La proporción más armoniosa. Úsala para dimensionar muebles, marcos y puertas.</p>
           <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12}}>
-            <div><FL>Dimensión base</FL><input type="number" inputMode="decimal" value={gv} onChange={e=>setGv(e.target.value)} style={K.inp}/></div>
+            <div><FL>Dimensión base</FL><input type="number" inputMode="decimal" value={gv} onChange={e= onFocus={e=>e.target.select()}>setGv(e.target.value)} style={K.inp}/></div>
             <div><FL>Unidad</FL><select value={gu} onChange={e=>setGu(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}</select></div>
           </div>
           <div style={{display:"flex",gap:10,marginTop:16}}>
@@ -1324,8 +1055,8 @@ function DesignTools(){
           <CL>Triángulo rectángulo</CL>
           <p style={{fontSize:14,color:C.ink3,marginBottom:16,lineHeight:1.5}}>Regla 3-4-5: si A=3, B=4 → C=5 = ángulo perfecto de 90°.</p>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div><FL>Lado A (pulgadas)</FL><input type="number" inputMode="decimal" value={a} onChange={e=>setA(+e.target.value)} style={K.inp}/></div>
-            <div><FL>Lado B (pulgadas)</FL><input type="number" inputMode="decimal" value={b} onChange={e=>setB(+e.target.value)} style={K.inp}/></div>
+            <div><FL>Lado A (pulgadas)</FL><input type="number" inputMode="decimal" value={a} onChange={e= onFocus={e=>e.target.select()}>setA(+e.target.value)} style={K.inp}/></div>
+            <div><FL>Lado B (pulgadas)</FL><input type="number" inputMode="decimal" value={b} onChange={e= onFocus={e=>e.target.select()}>setB(+e.target.value)} style={K.inp}/></div>
           </div>
           <div style={{display:"flex",gap:12,marginTop:16}}>
             <div style={{flex:1,background:C.field,borderRadius:12,padding:"14px",textAlign:"center"}}><div style={{fontSize:12,color:C.ink3,fontWeight:600}}>Hipotenusa C</div><div style={{fontSize:22,fontWeight:800,color:C.amber,marginTop:4}}>{fmt(hyp,4)}"</div><div style={{fontSize:12,color:C.ink3,marginTop:2}}>{toFrac(hyp,16)}</div></div>
@@ -1338,7 +1069,7 @@ function DesignTools(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  MADERA — PIE DE TABLA (rediseñado)
+//  MADERA -- PIE DE TABLA (rediseñado)
 // ═══════════════════════════════════════════════════════════
 function BoardTab({catalog}){
   const[rows,setRows]=useState([]);
@@ -1369,7 +1100,7 @@ function BoardTab({catalog}){
 
   return(
     <div>
-      <PT>Pie de tabla</PT>
+      <PT>Calculadora de madera</PT>
       <div style={{display:"flex",gap:8,marginBottom:16}}>
         <div style={{flex:1}}><FL>Unidad de medida</FL><select value={unit} onChange={e=>setUnit(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}</select></div>
       </div>
@@ -1409,7 +1140,7 @@ function BoardTab({catalog}){
               <div style={{display:"flex",alignItems:"center",padding:"10px 14px",background:C.field,gap:10,borderBottom:`1px solid ${C.border}`}}>
                 <span style={{fontSize:13,fontWeight:700,color:C.amber,minWidth:24}}>#{i+1}</span>
                 <select value={row.mat} onChange={e=>pickMat(row.id,e.target.value)} style={{flex:1,background:"transparent",border:"none",fontSize:15,fontWeight:600,color:C.ink1,cursor:"pointer"}}>
-                  <option value="">— Seleccionar madera —</option>
+                  <option value="">-- Seleccionar madera --</option>
                   {catalog.map(m=><option key={m.id}>{m.name}</option>)}
                   <option value="Otro">Otro / Personalizado</option>
                 </select>
@@ -1423,8 +1154,8 @@ function BoardTab({catalog}){
                       style={{...K.inp,textAlign:"center",padding:"10px 8px",fontSize:13,fontFamily:"monospace"}}/>
                   </div>
                 ))}
-                <div><FL>Cantidad</FL><input type="number" inputMode="numeric" value={row.qty||""} min={1} onChange={e=>upd(row.id,"qty",e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
-                <div><FL>$/pie·tabla</FL><input type="number" inputMode="decimal" value={row.cpt||""} step=".01" onChange={e=>upd(row.id,"cpt",+e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
+                <div><FL>Cantidad</FL><input type="number" inputMode="numeric" value={row.qty||""} min={1} onChange={e= onFocus={e=>e.target.select()}>upd(row.id,"qty",e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
+                <div><FL>$/pie·tabla</FL><input type="number" inputMode="decimal" value={row.cpt||""} step=".01" onChange={e= onFocus={e=>e.target.select()}>upd(row.id,"cpt",+e.target.value)} style={{...K.inp,textAlign:"center",padding:"10px 8px"}}/></div>
                 <div style={{display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
                   <div style={{background:`${C.amber}15`,borderRadius:10,padding:"8px 6px",textAlign:"center"}}>
                     <div style={{fontSize:10,color:C.ink3,fontWeight:600}}>pie·tabla</div>
@@ -1443,7 +1174,7 @@ function BoardTab({catalog}){
       {/* Nominal vs Real */}
       <STitle style={{marginTop:28}}>⚠️ Nominal vs. Real del lumber</STitle>
       <div style={K.card}>
-        <p style={{fontSize:14,color:C.ink3,marginBottom:14,lineHeight:1.5}}>Un <strong style={{color:C.ink1}}>2×4 no mide 2"×4"</strong>. El nombre es comercial — la medida real es diferente.</p>
+        <p style={{fontSize:14,color:C.ink3,marginBottom:14,lineHeight:1.5}}>Un <strong style={{color:C.ink1}}>2×4 no mide 2"×4"</strong>. El nombre es comercial -- la medida real es diferente.</p>
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
             <thead><tr><th style={K.th}>Nombre</th><th style={K.th}>Medida real</th><th style={K.th}>En mm</th></tr></thead>
@@ -1529,6 +1260,7 @@ function ProjectsTab({projects,setProjects,catalog}){
 function ProjDetail({project,catalog,onBack,onAdd,onDel,onUpd,calc}){
   const E={label:"",mat:"",L:"",W:"",T:"",qty:1,cpt:0};
   const[f,setF]=useState(E);
+  const[showConfig,setShowConfig]=useState(false);
   function pickMat(name){const m=catalog.find(c=>c.name===name);setF(x=>({...x,mat:name,T:m?String(m.thick):x.T,cpt:m?m.cost:x.cpt}));}
   function add(){if(!f.mat||!f.L||!f.W)return;onAdd({...f,L:parseWorkshopInput(String(f.L))||parseFloat(f.L)||0,W:parseWorkshopInput(String(f.W))||parseFloat(f.W)||0,T:parseWorkshopInput(String(f.T))||parseFloat(f.T)||0});setF(E);}
   const totBF=project.cuts.reduce((s,c)=>s+bfCalc(c.L,c.W,c.T,c.qty,"in"),0);
@@ -1541,77 +1273,76 @@ function ProjDetail({project,catalog,onBack,onAdd,onDel,onUpd,calc}){
       {project.client&&<p style={{fontSize:14,color:C.ink3,marginBottom:4}}>👤 {project.client}{project.clientTel&&<> · <a href={`tel:${project.clientTel}`} style={{color:C.blue,textDecoration:"none"}}>{project.clientTel}</a></>}</p>}
       {project.notes&&<p style={{fontSize:13,color:C.ink3,marginBottom:16,fontStyle:"italic"}}>{project.notes}</p>}
 
-      {/* Totales */}
-      <div style={{background:`linear-gradient(135deg,#1a1008,#2d1a08)`,borderRadius:18,padding:"18px 20px",marginBottom:20,border:`1px solid ${C.amber}44`}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-          <TotalLine lbl="Materiales" val={`$${calc.mat.toFixed(2)}`}/>
-          <TotalLine lbl={`Ganancia (${project.markup}%)`} val={`$${calc.markup.toFixed(2)}`} color={C.green}/>
-          <TotalLine lbl="Mano de obra" val={`$${calc.labor.toFixed(2)}`} color={C.blue}/>
-          <TotalLine lbl="TOTAL FINAL" val={`$${calc.total.toFixed(2)}`} color={C.amber} big/>
-        </div>
-      </div>
-
-      {/* Markup */}
-      <div style={K.card}>
-        <CL>Ganancia (Markup)</CL>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-          {QUICK_MARKUP.map(v=>(
-            <button key={v} onClick={()=>onUpd("markup",v)} style={{padding:"8px 14px",borderRadius:20,border:`1.5px solid ${project.markup===v?C.amber:C.border}`,background:project.markup===v?`${C.amber}18`:"transparent",color:project.markup===v?C.amber:C.ink3,fontWeight:700,fontSize:14,cursor:"pointer"}}>{v}%</button>
+      {/* ── SECCIÓN 1: RESUMEN (solo lectura, no clickeable) ── */}
+      <div style={{background:"#F8F4EE",borderRadius:16,padding:"16px 18px",marginBottom:16,border:`1px solid ${C.border}`}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.ink3,textTransform:"uppercase",letterSpacing:.8,marginBottom:12}}>Resumen del proyecto</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+          {[
+            ["Materiales","$"+calc.mat.toFixed(2),C.ink1],
+            ["Ganancia ("+project.markup+"%)","$"+calc.markup.toFixed(2),C.green],
+            ["Mano de obra","$"+calc.labor.toFixed(2),C.blue],
+            ["TOTAL FINAL","$"+calc.total.toFixed(2),C.amber],
+          ].map(([lbl,val,col])=>(
+            <div key={lbl} style={{background:C.white,borderRadius:10,padding:"10px 12px",border:`1px solid ${C.border}`}}>
+              <div style={{fontSize:11,color:C.ink3,fontWeight:600,marginBottom:3}}>{lbl}</div>
+              <div style={{fontSize:lbl==="TOTAL FINAL"?20:16,fontWeight:800,color:col,fontFamily:"monospace"}}>{val}</div>
+            </div>
           ))}
         </div>
-        <FL>O ingresa % manual</FL>
-        <input type="number" value={project.markup||""} onChange={e=>onUpd("markup",+e.target.value)} placeholder="0" style={{...K.inp,marginBottom:0}}/>
+        <div style={{fontSize:11,color:C.ink4,textAlign:"right"}}>{project.cuts.length} piezas · {totBF.toFixed(2)} pie·tabla</div>
       </div>
 
-      {/* Mano de obra */}
+      {/* ── SECCIÓN 2: ÁREA DE TRABAJO (interactiva) ── */}
+
+      {/* PASO 1: Agregar pieza */}
       <div style={K.card}>
-        <CL>Mano de obra</CL>
-        <div style={{display:"flex",gap:8,marginBottom:12}}>
-          {[["pct","% del total"],["fixed","Valor fijo $"]].map(([v,l])=>(
-            <button key={v} onClick={()=>onUpd("laborType",v)} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${project.laborType===v?C.blue:C.border}`,background:project.laborType===v?`${C.blue}12`:"transparent",color:project.laborType===v?C.blue:C.ink3,fontWeight:600,fontSize:13,cursor:"pointer"}}>{l}</button>
-          ))}
+        <div style={{fontSize:13,fontWeight:800,color:C.ink1,marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:22,height:22,borderRadius:6,background:C.amber,color:C.white,fontSize:12,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>1</div>
+          Agregar pieza
         </div>
-        {project.laborType==="pct"&&(
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-            {QUICK_LABOR.map(v=>(
-              <button key={v} onClick={()=>onUpd("labor",v)} style={{padding:"8px 14px",borderRadius:20,border:`1.5px solid ${project.labor===v?C.blue:C.border}`,background:project.labor===v?`${C.blue}12`:"transparent",color:project.labor===v?C.blue:C.ink3,fontWeight:700,fontSize:14,cursor:"pointer"}}>{v}%</button>
-            ))}
-          </div>
-        )}
-        <FL>{project.laborType==="pct"?"% sobre (materiales + ganancia)":"Valor fijo ($)"}</FL>
-        <input type="number" value={project.labor||""} onChange={e=>onUpd("labor",+e.target.value)} placeholder="0" style={K.inp}/>
-      </div>
-
-      {/* Agregar pieza */}
-      <div style={K.card}>
-        <CL>Agregar pieza</CL>
         <FL>Nombre de la pieza</FL>
-        <input value={f.label} onChange={e=>setF({...f,label:e.target.value})} placeholder="Ej: Lateral izquierdo" style={{...K.inp,marginBottom:12}}/>
+        <input value={f.label} onChange={e=>setF({...f,label:e.target.value})}
+          onFocus={e=>e.target.select()}
+          placeholder="Ej: Lateral izquierdo" style={{...K.inp,marginBottom:12}}/>
         <FL>Material</FL>
         <select value={f.mat} onChange={e=>pickMat(e.target.value)} style={{...K.sel,marginBottom:12}}>
-          <option value="">— Seleccionar —</option>{catalog.map(m=><option key={m.id}>{m.name}</option>)}<option value="Otro">Otro</option>
+          <option value="">-- Seleccionar material --</option>
+          {catalog.map(m=><option key={m.id}>{m.name}</option>)}
+          <option value="Otro">Otro</option>
         </select>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
           {[["Largo\"",f.L,"L"],["Ancho\"",f.W,"W"],["Grosor\"",f.T,"T"],["Cantidad",f.qty,"qty"]].map(([l,v,k])=>(
-            <div key={k}><FL>{l}</FL><input value={v} onChange={e=>setF({...f,[k]:e.target.value})} placeholder={k==="qty"?"1":'Ej: 2 ft 3 1/8'} style={{...K.inp,fontFamily:k!=="qty"?"monospace":"inherit",fontSize:k!=="qty"?13:16}}/></div>
+            <div key={k}><FL>{l}</FL>
+              <input value={v}
+                onFocus={e=>e.target.select()}
+                onChange={e=>setF({...f,[k]:e.target.value})}
+                placeholder={k==="qty"?"1":'Ej: 2 ft 3 1/8'}
+                style={{...K.inp,fontFamily:k!=="qty"?"monospace":"inherit",fontSize:k!=="qty"?13:16}}/>
+            </div>
           ))}
         </div>
         <FL>$ por pie de tabla</FL>
-        <input type="number" inputMode="decimal" value={f.cpt||""} step=".01" onChange={e=>setF({...f,cpt:+e.target.value})} style={{...K.inp,marginBottom:14}}/>
-        <BtnP full onClick={add}>+ Agregar al proyecto</BtnP>
+        <input type="number" inputMode="decimal" value={f.cpt||""}
+          onFocus={e=>e.target.select()}
+          step=".01" onChange={e=>setF({...f,cpt:+e.target.value})}
+          style={{...K.inp,marginBottom:14}}/>
+        <BtnP full onClick={add}>+ Agregar pieza</BtnP>
       </div>
 
-      {/* Lista de cortes */}
+      {/* PASO 2: Lista de cortes */}
       {project.cuts.length>0&&(
         <div style={K.card}>
-          <CL>Lista de cortes</CL>
+          <div style={{fontSize:13,fontWeight:800,color:C.ink1,marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:22,height:22,borderRadius:6,background:C.amber,color:C.white,fontSize:12,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>2</div>
+            Lista de cortes
+          </div>
           {project.cuts.map(c=>{
             const bfv=bfCalc(c.L,c.W,c.T,c.qty,"in");
             return(
               <div key={c.id} style={{background:C.field,borderRadius:12,padding:"12px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:700,color:C.ink1}}>{c.label||c.mat}</div>
-                  <div style={{fontSize:13,color:C.ink3,marginTop:2}}>{c.mat} · {c.L}"×{c.W}"×{c.T}" · {c.qty} pza</div>
+                  <div style={{fontSize:12,color:C.ink3,marginTop:2}}>{c.mat} · {c.L}"×{c.W}"×{c.T}" · {c.qty} pza</div>
                   <div style={{display:"flex",gap:14,marginTop:5}}>
                     <span style={{fontSize:13,fontWeight:700,color:C.amber}}>{bfv.toFixed(3)} pt</span>
                     <span style={{fontSize:13,fontWeight:700,color:C.green}}>${(bfv*c.cpt).toFixed(2)}</span>
@@ -1627,6 +1358,45 @@ function ProjDetail({project,catalog,onBack,onAdd,onDel,onUpd,calc}){
           </div>
         </div>
       )}
+
+      {/* PASO 3: Configuración del proyecto */}
+      <div style={K.card}>
+        <div style={{fontSize:13,fontWeight:800,color:C.ink1,marginBottom:4,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:22,height:22,borderRadius:6,background:C.amber,color:C.white,fontSize:12,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>3</div>
+            Configuración del proyecto
+          </div>
+          <button onClick={()=>setShowConfig(v=>!v)} style={{background:"transparent",border:"none",color:C.amber,fontSize:13,fontWeight:700,cursor:"pointer"}}>{showConfig?"Cerrar ▲":"Ajustar ▼"}</button>
+        </div>
+        {showConfig&&(
+          <>
+            <div style={{height:1,background:C.border,margin:"12px 0"}}/>
+            <CL>Ganancia (Markup)</CL>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+              {QUICK_MARKUP.map(v=>(
+                <button key={v} onClick={()=>onUpd("markup",v)} style={{padding:"8px 14px",borderRadius:20,border:`1.5px solid ${project.markup===v?C.amber:C.border}`,background:project.markup===v?`${C.amber}18`:"transparent",color:project.markup===v?C.amber:C.ink3,fontWeight:700,fontSize:14,cursor:"pointer"}}>{v}%</button>
+              ))}
+            </div>
+            <FL>O ingresa % manual</FL>
+            <input type="number" value={project.markup||""} onFocus={e=>e.target.select()} onChange={e=>onUpd("markup",+e.target.value)} placeholder="0" style={{...K.inp,marginBottom:16}}/>
+            <CL>Mano de obra</CL>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {[["pct","% del total"],["fixed","Valor fijo $"]].map(([v,l])=>(
+                <button key={v} onClick={()=>onUpd("laborType",v)} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${project.laborType===v?C.blue:C.border}`,background:project.laborType===v?`${C.blue}12`:"transparent",color:project.laborType===v?C.blue:C.ink3,fontWeight:600,fontSize:13,cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
+            {project.laborType==="pct"&&(
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                {QUICK_LABOR.map(v=>(
+                  <button key={v} onClick={()=>onUpd("labor",v)} style={{padding:"8px 14px",borderRadius:20,border:`1.5px solid ${project.labor===v?C.blue:C.border}`,background:project.labor===v?`${C.blue}12`:"transparent",color:project.labor===v?C.blue:C.ink3,fontWeight:700,fontSize:14,cursor:"pointer"}}>{v}%</button>
+                ))}
+              </div>
+            )}
+            <FL>{project.laborType==="pct"?"% sobre (mat + ganancia)":"Valor fijo ($)"}</FL>
+            <input type="number" value={project.labor||""} onFocus={e=>e.target.select()} onChange={e=>onUpd("labor",+e.target.value)} placeholder="0" style={K.inp}/>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -1719,14 +1489,14 @@ function CatalogTab({catalog,setCatalog}){
         <FL>Nombre</FL><input value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="Ej: Roble Blanco 4/4 Select" style={{...K.inp,marginBottom:14}}/>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           <div><FL>Categoría</FL><select value={f.cat} onChange={e=>setF({...f,cat:e.target.value})} style={K.sel}>{["Blanda","Dura","Laminado","Otro"].map(c=><option key={c}>{c}</option>)}</select></div>
-          <div><FL>Grosor (pulgadas)</FL><input type="number" inputMode="decimal" value={f.thick} step=".25" placeholder="0.75" onChange={e=>setF({...f,thick:e.target.value})} style={K.inp}/></div>
+          <div><FL>Grosor (pulgadas)</FL><input type="number" inputMode="decimal" value={f.thick} step=".25" placeholder="0.75" onChange={e= onFocus={e=>e.target.select()}>setF({...f,thick:e.target.value})} style={K.inp}/></div>
         </div>
         <FL style={{marginTop:12}}>Descripción</FL><input value={f.desc||""} onChange={e=>setF({...f,desc:e.target.value})} placeholder="Grado, acabado, características..." style={K.inp}/>
       </div>
       <div style={K.card}>
         <CL>Precio</CL>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10}}>
-          <div><FL>Costo ($)</FL><input type="number" inputMode="decimal" value={f.cost} step=".01" placeholder="0.00" onChange={e=>setF({...f,cost:e.target.value})} style={K.inp}/></div>
+          <div><FL>Costo ($)</FL><input type="number" inputMode="decimal" value={f.cost} step=".01" placeholder="0.00" onChange={e= onFocus={e=>e.target.select()}>setF({...f,cost:e.target.value})} style={K.inp}/></div>
           <div><FL>Por unidad</FL><select value={f.cu} onChange={e=>setF({...f,cu:e.target.value})} style={K.sel}>{COST_U.map(u=><option key={u} value={u}>{u}</option>)}</select></div>
         </div>
         {+f.cost>0&&<div style={{marginTop:10,padding:"10px 14px",background:C.amberBg,borderRadius:10,borderLeft:`3px solid ${C.amber}`,fontSize:13}}><strong style={{color:C.amber}}>${(+f.cost).toFixed(2)}</strong> por {f.cu}{f.cu==="pie²"&&<span style={{color:C.ink3}}> · equiv. ${(+f.cost/0.0929).toFixed(2)}/m²</span>}{f.cu==="m²"&&<span style={{color:C.ink3}}> · equiv. ${(+f.cost*0.0929).toFixed(2)}/pie²</span>}</div>}
@@ -1734,7 +1504,7 @@ function CatalogTab({catalog,setCatalog}){
       <div style={K.card}>
         <CL>Inventario</CL>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10}}>
-          <div><FL>Stock</FL><input type="number" inputMode="numeric" value={f.stock} placeholder="0" onChange={e=>setF({...f,stock:e.target.value})} style={K.inp}/></div>
+          <div><FL>Stock</FL><input type="number" inputMode="numeric" value={f.stock} placeholder="0" onChange={e= onFocus={e=>e.target.select()}>setF({...f,stock:e.target.value})} style={K.inp}/></div>
           <div><FL>Unidad</FL><select value={f.su||"pie²"} onChange={e=>setF({...f,su:e.target.value})} style={K.sel}>{STOCK_U.map(u=><option key={u} value={u}>{u}</option>)}</select></div>
         </div>
       </div>
@@ -1860,7 +1630,7 @@ function RefTab(){
 
       {sec==="nails"&&(
         <div style={K.card}>
-          <CL>Clavos — sistema Pennyweight (d)</CL>
+          <CL>Clavos -- sistema Pennyweight (d)</CL>
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
             <thead><tr><th style={K.th}>Calibre</th><th style={K.th}>Largo pulg</th><th style={K.th}>Largo mm</th></tr></thead>
             <tbody>{NAILS.map(([c,l,m])=>(
@@ -1870,7 +1640,7 @@ function RefTab(){
           <Hint>Mayor número = clavo más largo. El 16d es el más usado en estructuras de madera.</Hint>
           <div style={{marginTop:14,padding:"12px 14px",background:`${C.amber}08`,borderRadius:10,borderLeft:`3px solid ${C.amber}`,fontSize:13,color:C.ink2,lineHeight:1.6}}>
             <strong style={{color:C.amber}}>¿Cuándo usar clavos?</strong><br/>
-            Framing y estructuras de madera, instalación de molduras, pisos de madera, trabajos donde se puede ver la cabeza. Evita clavos en madera dura cerca de los bordes — pre-taladra o usa tornillos.
+            Framing y estructuras de madera, instalación de molduras, pisos de madera, trabajos donde se puede ver la cabeza. Evita clavos en madera dura cerca de los bordes -- pre-taladra o usa tornillos.
           </div>
         </div>
       )}
@@ -2006,7 +1776,7 @@ function ProTab({catalog,projects}){
       ctx.fillStyle=col;ctx.globalAlpha=0.82;ctx.fillRect(px,py,pw,ph);
       ctx.globalAlpha=1;ctx.strokeStyle="rgba(0,0,0,0.35)";ctx.lineWidth=1.5;ctx.strokeRect(px,py,pw,ph);
       if(pw>24&&ph>16){
-        const nm=p.name.length>9?p.name.slice(0,8)+"…":p.name;
+        const nm=p.name.length>9?p.name.slice(0,8)+"...":p.name;
         const fs=Math.max(7,Math.min(11,pw/9));
         ctx.fillStyle="rgba(0,0,0,0.7)";ctx.font=`bold ${fs}px Inter,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";
         ctx.fillText(nm,px+pw/2,py+ph/2-fs*0.6);
@@ -2038,7 +1808,7 @@ function ProTab({catalog,projects}){
             ["🔲","Optimizador de tableros","Distribuye tus piezas en hojas de MDF, triplay o melanina minimizando el desperdicio"],
             ["🗄️","Gabinetes preinstalados","Genera el despiece completo de gabinetes base, aéreos, cajoneras y torres en segundos"],
             ["📊","Reporte de corte","Lista de cortes con posiciones exactas, eficiencia por tablero e instrucciones paso a paso"],
-            ["🌍","Tableros internacionales","Tamaños estándar de México, EE.UU., Europa y Canadá — o ingresa medidas personalizadas"],
+            ["🌍","Tableros internacionales","Tamaños estándar de México, EE.UU., Europa y Canadá -- o ingresa medidas personalizadas"],
             ["📐","Tres sistemas de unidades","Trabaja en cm, mm o pulgadas según lo que necesites"],
           ].map(([icon,title,desc])=>(
             <div key={title} style={{display:"flex",gap:14,background:"rgba(255,255,255,0.04)",borderRadius:14,padding:"16px",border:"1px solid rgba(255,255,255,0.07)",marginBottom:10}}>
@@ -2118,7 +1888,7 @@ function ProTab({catalog,projects}){
               {[["Ancho","w"],["Alto","h"]].map(([l,k])=>(
                 <div key={k}>
                   <FL style={{color:"#888"}}>{l} ({pu.label})</FL>
-                  <input type="number" inputMode="decimal" step={pu.step} value={newP[k]===""?"":fmtPro(+newP[k]||0)} onChange={e=>setNewP({...newP,[k]:e.target.value===""?"":toBasePro(e.target.value)})}
+                  <input type="number" inputMode="decimal" step={pu.step} value={newP[k]===""?"":fmtPro(+newP[k]||0)} onChange={e= onFocus={e=>e.target.select()}>setNewP({...newP,[k]:e.target.value===""?"":toBasePro(e.target.value)})}
                     style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none"}}/>
                 </div>
               ))}
@@ -2132,7 +1902,7 @@ function ProTab({catalog,projects}){
             </div>
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12,marginBottom:12}}>
               <div style={{fontSize:13,color:"#888",paddingTop:6}}>Cantidad</div>
-              <input type="number" min={1} value={newP.qty} onChange={e=>setNewP({...newP,qty:e.target.value})}
+              <input type="number" min={1} value={newP.qty} onChange={e= onFocus={e=>e.target.select()}>setNewP({...newP,qty:e.target.value})}
                 style={{background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:16,outline:"none"}}/>
             </div>
             <button onClick={addPiece} disabled={!newP.name||newP.w===""||newP.h===""} style={{width:"100%",padding:"15px",background:(!newP.name||newP.w===""||newP.h==="")?"rgba(255,255,255,0.06)":C.proGold,color:(!newP.name||newP.w===""||newP.h==="")?"#444":"#1A1A28",border:"none",borderRadius:14,fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:(!newP.name||newP.w===""||newP.h==="")?"none":`0 4px 20px rgba(232,193,77,0.25)`}}>
@@ -2149,7 +1919,7 @@ function ProTab({catalog,projects}){
                   <div style={{width:14,height:14,borderRadius:4,background:PRO_COLORS[i%PRO_COLORS.length],flexShrink:0}}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:15,fontWeight:700,color:C.proText}}>{p.name} <span style={{color:C.proGold,fontSize:13}}>×{p.qty}</span></div>
-                    <div style={{fontSize:12,color:"#666",fontFamily:"'DM Mono',monospace",marginTop:3}}>{fmtPro(p.w)}{pu.label} × {fmtPro(p.h)}{pu.label} · {p.grain==="H"?"→ H":p.grain==="V"?"↑ V":"—"}</div>
+                    <div style={{fontSize:12,color:"#666",fontFamily:"'DM Mono',monospace",marginTop:3}}>{fmtPro(p.w)}{pu.label} × {fmtPro(p.h)}{pu.label} · {p.grain==="H"?"→ H":p.grain==="V"?"↑ V":"--"}</div>
                   </div>
                   <button onClick={()=>setPieces(pieces.filter((_,j)=>j!==i))} style={{width:36,height:36,borderRadius:10,background:"rgba(220,80,80,0.12)",border:"1px solid rgba(220,80,80,0.25)",color:"#F08080",fontSize:16,cursor:"pointer"}}>✕</button>
                 </div>
@@ -2182,7 +1952,7 @@ function ProTab({catalog,projects}){
             <div style={{marginBottom:20}}>
               <div style={{fontSize:11,fontWeight:800,letterSpacing:.8,color:"#555",textTransform:"uppercase",marginBottom:10}}>Tamaño de tablero</div>
               <select style={{width:"100%",background:"rgba(30,28,50,0.98)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px 16px",color:C.proText,fontSize:16,outline:"none"}} value={sheetCfg.presetIdx} onChange={e=>setSheetCfg({...sheetCfg,presetIdx:+e.target.value})}>
-                {SHEET_PRESETS[sheetCfg.country].map((p,i)=><option key={i} value={i}>{p.label} — {fmtPro(p.w)}{pu.label} × {fmtPro(p.h)}{pu.label}</option>)}
+                {SHEET_PRESETS[sheetCfg.country].map((p,i)=><option key={i} value={i}>{p.label} -- {fmtPro(p.w)}{pu.label} × {fmtPro(p.h)}{pu.label}</option>)}
               </select>
             </div>
           ):(
@@ -2190,7 +1960,7 @@ function ProTab({catalog,projects}){
               {[["Ancho tablero","customW"],["Alto tablero","customH"]].map(([l,k])=>(
                 <div key={k}>
                   <FL style={{color:"#888"}}>{l} ({pu.label})</FL>
-                  <input type="number" inputMode="decimal" value={fmtPro(sheetCfg[k])} onChange={e=>setSheetCfg({...sheetCfg,[k]:toBasePro(e.target.value)})}
+                  <input type="number" inputMode="decimal" value={fmtPro(sheetCfg[k])} onChange={e= onFocus={e=>e.target.select()}>setSheetCfg({...sheetCfg,[k]:toBasePro(e.target.value)})}
                     style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none"}}/>
                 </div>
               ))}
@@ -2220,7 +1990,7 @@ function ProTab({catalog,projects}){
           {/* Kerf */}
           <div style={{marginBottom:20}}>
             <FL style={{color:"#888"}}>Sangría de sierra - kerf ({pu.label})</FL>
-            <input type="number" inputMode="decimal" value={fmtPro(sheetCfg.kerfCM)} onChange={e=>setSheetCfg({...sheetCfg,kerfCM:+toBasePro(e.target.value)})}
+            <input type="number" inputMode="decimal" value={fmtPro(sheetCfg.kerfCM)} onChange={e= onFocus={e=>e.target.select()}>setSheetCfg({...sheetCfg,kerfCM:+toBasePro(e.target.value)})}
               style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"14px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:18,outline:"none",marginBottom:8}}/>
             <div style={{fontSize:12,color:"#444"}}>Típico: sierra circular 3mm · sierra de mesa 3.2mm · CNC 6mm</div>
           </div>
@@ -2297,7 +2067,7 @@ function ProTab({catalog,projects}){
                   <td style={{padding:"11px 12px",color:C.proGold,fontFamily:"'DM Mono',monospace"}}>{p.qty}</td>
                   <td style={{padding:"11px 12px",fontFamily:"'DM Mono',monospace",color:C.proText}}>{fmtPro(p.w)}</td>
                   <td style={{padding:"11px 12px",fontFamily:"'DM Mono',monospace",color:C.proText}}>{fmtPro(p.h)}</td>
-                  <td style={{padding:"11px 12px",color:"#666"}}>{p.grain==="H"?"→ H":p.grain==="V"?"↑ V":"—"}</td>
+                  <td style={{padding:"11px 12px",color:"#666"}}>{p.grain==="H"?"→ H":p.grain==="V"?"↑ V":"--"}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -2356,7 +2126,7 @@ function ProTab({catalog,projects}){
                   {[["w","Ancho"],["h","Alto"],["d","Prof."]].map(([k,l])=>(
                     <div key={k}>
                       <FL style={{color:"#888"}}>{l}</FL>
-                      <input type="number" inputMode="decimal" step={pu.step} value={fmtPro(toBasePro(pDims[k]))} onChange={e=>setPDims({...pDims,[k]:parseFloat(pu.fromBase(toBasePro(e.target.value)).toFixed(1))||0})}
+                      <input type="number" inputMode="decimal" step={pu.step} value={fmtPro(toBasePro(pDims[k]))} onChange={e= onFocus={e=>e.target.select()}>setPDims({...pDims,[k]:parseFloat(pu.fromBase(toBasePro(e.target.value)).toFixed(1))||0})}
                         style={{width:"100%",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"12px 10px",color:C.proText,fontFamily:"'DM Mono',monospace",fontSize:16,outline:"none"}}/>
                     </div>
                   ))}

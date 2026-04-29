@@ -293,152 +293,154 @@ function CalcTab(){
   );
 }
 
-// ── CONVERSOR UNIFICADO -- teclado único inteligente ──────────
-// Un solo teclado para todo. / activa fracción automáticamente.
-// Dígitos aparecen inmediatamente en pantalla.
+// ── CONVERSOR UNIFICADO ──────────────────────────────────────
 const CONV_UNITS=[
-  {id:"mm",    label:"Milímetros",         short:"mm"},
-  {id:"cm",    label:"Centímetros",        short:"cm"},
-  {id:"m",     label:"Metros",             short:"m"},
-  {id:"in",    label:"Pulgadas (decimal)", short:'in"'},
-  {id:"infrac",label:"Pulgadas (fracción)",short:"in ½"},
-  {id:"ft",    label:"Pies",               short:"ft"},
-  {id:"yd",    label:"Yardas",             short:"yd"},
+  {id:"mm",    label:"Milímetros",          short:"mm"},
+  {id:"cm",    label:"Centímetros",         short:"cm"},
+  {id:"m",     label:"Metros",              short:"m"},
+  {id:"in",    label:"Pulgadas (decimal)",  short:'in"'},
+  {id:"infrac",label:"Pulgadas (fracción)", short:"in 1/2"},
+  {id:"ft",    label:"Pies",                short:"ft"},
+  {id:"yd",    label:"Yardas",              short:"yd"},
 ];
 
 function CombinedConverter(){
-  const[fromU,setFromU]=useState("in");
-  const[toU,  setToU]  =useState("mm");
-  const[showFrom,setShowFrom]=useState(false);
-  const[showTo,  setShowTo]  =useState(false);
+  const[toU,      setToU]     = useState("mm");
+  const[showFrom, setShowFrom]= useState(false);
+  const[showTo,   setShowTo]  = useState(false);
+  const[fromSel,  setFromSel] = useState("in");
+  const[buf,      setBuf]     = useState("");
+  const[ftAcc,    setFtAcc]   = useState(0);
+  const[inAcc,    setInAcc]   = useState(0);
+  const[fracN,    setFracN]   = useState(0);
+  const[slashOn,  setSlash]   = useState(false);
+  const[fracNum,  setFracNum] = useState("");
+  const[fracDen,  setFracDen] = useState("");
 
-  // ── Buffer universal ─────────────────────────────────────
-  // Para cualquier unidad: buf = dígitos activos
-  // Para infrac además: ftAcc, inAcc, fracN, slashOn, fracNum, fracDen
-  const[buf,    setBuf]   =useState("");
-  const[ftAcc,  setFtAcc] =useState(0);
-  const[inAcc,  setInAcc] =useState(0);
-  const[fracN,  setFracN] =useState(0);
-  const[slashOn,setSlash] =useState(false);
-  const[fracNum,setFracNum]=useState("");
-  const[fracDen,setFracDen]=useState("");
+  const carpMode = ftAcc>0 || inAcc>0 || fracN>0 || slashOn;
+  const fromU    = carpMode ? "infrac" : fromSel;
+  const bufNum   = parseFloat(buf) || 0;
+  const pending  = slashOn && fracDen
+    ? (parseFloat(fracNum)||0) / (parseFloat(fracDen)||1) : 0;
 
-  const isFrac=fromU==="infrac";
+  const totalIn = carpMode
+    ? ftAcc*12 + inAcc + fracN/16 + pending
+    : fromSel==="ft"  ? bufNum*12
+    : fromSel==="yd"  ? bufNum*36
+    : fromSel==="mm"  ? bufNum/25.4
+    : fromSel==="cm"  ? bufNum/2.54
+    : fromSel==="m"   ? bufNum/0.0254
+    : bufNum;
 
-  // ── Valor en pulgadas decimales ──────────────────────────
-  const inputInches = isFrac
-    ? ftAcc*12 + inAcc + fracN/16 + (slashOn&&fracDen?(parseFloat(fracNum)||0)/(parseFloat(fracDen)||1):0)
-    : cvt(parseFloat(buf)||0, fromU==="in"||fromU==="ft"||fromU==="yd"||fromU==="mm"||fromU==="cm"||fromU==="m"?fromU:"in","in");
-
-  const hasInput = isFrac
-    ? (ftAcc>0||inAcc>0||fracN>0||buf!=="")
+  const hasInput = carpMode
+    ? (ftAcc>0||inAcc>0||fracN>0||buf!==""||slashOn)
     : (buf!==""&&buf!=="0"&&buf!==".");
 
-  // ── Display del valor ingresado ──────────────────────────
   function inputDisplay(){
-    if(isFrac){
-      // Muestra el buffer activo primero, luego la medida construida
+    if(carpMode||slashOn){
       let s="";
-      if(ftAcc>0) s+=`${ftAcc} ft `;
+      if(ftAcc>0) s+=ftAcc+" ft ";
       if(slashOn){
-        // fracción manual en progreso
-        s+=(inAcc>0?`${inAcc} `:"")+`${fracNum||""}/${fracDen||"_"}"`;
+        s+=(inAcc>0?inAcc+" ":"")+fracNum+"/"+(fracDen||"_")+'"';
       } else if(buf){
-        // dígitos activos sin confirmar -- MOSTRAR INMEDIATAMENTE
         s+=buf;
-      } else {
-        // medida ya confirmada
-        if(inAcc>0||fracN>0){
-          s+=inAcc>0?`${inAcc}`:"";
-          if(fracN>0){const g=gcd(fracN,16);s+=(inAcc>0?" ":"")+`${fracN/g}/${16/g}"`;}
-          else if(inAcc>0) s+='"';
-        }
+      } else if(inAcc>0||fracN>0){
+        s+=inAcc>0?String(inAcc):"";
+        if(fracN>0){const g=gcd(fracN,16);s+=(inAcc>0?" ":"")+fracN/g+"/"+16/g+'"';}
+        else s+='"';
       }
       return s||"0";
     }
-    // Modo normal: mostrar lo que hay en buf
     return buf||"0";
   }
 
-  // ── Resultado convertido ──────────────────────────────────
   function getResult(){
-    const inches=inputInches;
     if(!hasInput) return "--";
+    const inches=totalIn;
     if(toU==="infrac"){
-      const ft2=Math.floor(inches/12),rem=inches%12;
-      const inW=Math.floor(rem),fr=Math.round((rem-inW)*16);
-      const g=fr>0?gcd(fr,16):1;
+      const f=Math.floor(inches/12), rem=inches%12;
+      const iw=Math.floor(rem), fr16=Math.round((rem-iw)*16);
+      const finalIw = fr16>=16 ? iw+1 : iw;
+      const finalFr  = fr16>=16 ? 0 : fr16;
+      const g=finalFr>0?gcd(finalFr,16):1;
       let s="";
-      if(ft2>0)s+=`${ft2}ft `;
-      if(inW>0||fr>0){s+=inW>0?`${inW}`:"";if(fr>0)s+=(inW>0?" ":"")+`${fr/g}/${16/g}"`;else s+='"';}
+      if(f>0) s+=f+"ft ";
+      if(finalIw>0||finalFr>0){
+        s+=finalIw>0?String(finalIw):"";
+        if(finalFr>0) s+=(finalIw>0?" ":"")+finalFr/g+"/"+16/g+'"';
+        else s+='"';
+      }
       return s||"0";
     }
-    const toId=toU==="in"?"in":toU;
-    const r=cvt(inches,"in",toId);
-    return `${fmt(r,5)} ${CONV_UNITS.find(u=>u.id===toU)?.short}`;
+    const r=cvt(inches,"in",toU==="in"?"in":toU);
+    return fmt(r,5)+" "+(CONV_UNITS.find(u=>u.id===toU)||{short:""}).short;
   }
 
-  // ── Acciones del teclado ──────────────────────────────────
   function digit(d){
-    if(isFrac){
-      if(slashOn) setFracDen(v=>(v+d).slice(0,3));
-      else        setBuf(v=>(v+d).slice(0,6));   // muestra inmediatamente
-    } else {
-      setBuf(v=>{
-        if(v==="0"||v==="") return d==="."?"0.":d;
-        return (v+d).slice(0,10);
-      });
-    }
+    if(slashOn){ setFracDen(function(v){return (v+d).slice(0,4);}); return; }
+    setBuf(function(v){
+      if(v===""||v==="0") return d==="."?"0.":d;
+      return (v+d).slice(0,10);
+    });
   }
 
   function confirmFt(){
-    // Confirma pies desde buf
+    if(fromSel!=="infrac") setFromSel("infrac");
     const n=parseFloat(buf)||0;
-    if(n>0) setFtAcc(n);
+    if(n>0) setFtAcc(function(v){return v+n;});
     setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
   }
 
   function confirmIn(){
+    if(fromSel!=="infrac") setFromSel("infrac");
     if(slashOn){
-      // Confirma fracción manual num/den
-      const n=parseFloat(fracNum)||0,d=parseFloat(fracDen)||16;
+      const n=parseFloat(fracNum)||0, d=parseFloat(fracDen)||16;
       const n16=Math.round((n/d)*16);
-      setFracN(v=>v+n16);
+      const newTotal=fracN+n16;
+      if(newTotal>=16){
+        setInAcc(function(v){return v+Math.floor(newTotal/16);});
+        setFracN(newTotal%16);
+      } else {
+        setFracN(newTotal);
+      }
       setSlash(false); setFracDen(""); setFracNum(""); setBuf("");
     } else {
-      // Confirma pulgadas enteras desde buf
       const n=parseFloat(buf)||0;
-      if(n>0) setInAcc(n);
+      if(n>0) setInAcc(function(v){return v+n;});
       setBuf(""); setSlash(false);
     }
   }
 
   function pressSlash(){
-    // Activa fracción automáticamente -- guarda lo que hay en buf como numerador
-    setFracNum(buf||"1");
-    setBuf("");
-    setFracDen("");
-    setSlash(true);
+    if(fromSel!=="infrac") setFromSel("infrac");
+    setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true);
   }
 
-  function addFrac(n16){ setFracN(v=>v+n16); setBuf(""); }
+  function addFrac(n16){
+    if(fromSel!=="infrac") setFromSel("infrac");
+    setFracN(function(v){
+      const total=v+n16;
+      if(total>=16){
+        setInAcc(function(i){return i+Math.floor(total/16);});
+        return total%16;
+      }
+      return total;
+    });
+    setBuf("");
+  }
 
   function pressDecimal(){
-    if(isFrac) return; // no aplica en fracción
-    setBuf(v=>v.includes(".")?v:(v||"0")+".");
+    if(carpMode) return;
+    setBuf(function(v){return v.includes(".")?v:(v||"0")+".";});
   }
 
   function backspace(){
-    if(isFrac){
-      if(slashOn&&fracDen){ setFracDen(v=>v.slice(0,-1)); return; }
-      if(slashOn)         { setSlash(false); setFracDen(""); setFracNum(""); return; }
-      if(buf)             { setBuf(v=>v.slice(0,-1)); return; }
-      if(fracN>0)         { setFracN(0); return; }
-      if(inAcc>0)         { setInAcc(0); return; }
-      if(ftAcc>0)         { setFtAcc(0); return; }
-    } else {
-      setBuf(v=>v.slice(0,-1));
-    }
+    if(slashOn&&fracDen){ setFracDen(function(v){return v.slice(0,-1);}); return; }
+    if(slashOn){ setSlash(false); setFracDen(""); setFracNum(""); return; }
+    if(buf){ setBuf(function(v){return v.slice(0,-1);}); return; }
+    if(fracN>0){ setFracN(0); return; }
+    if(inAcc>0){ setInAcc(0); return; }
+    if(ftAcc>0){ setFtAcc(0); return; }
   }
 
   function clearAll(){
@@ -447,47 +449,55 @@ function CombinedConverter(){
   }
 
   function swapUnits(){
-    setFromU(toU); setToU(fromU); clearAll();
+    const tmp=fromSel; setFromSel(toU); setToU(tmp); clearAll();
   }
 
-  // ── Selector de unidad ───────────────────────────────────
-  function UPick({value,onChange,open,setOpen,lbl}){
+  function UPick({value, onChange, isFrom}){
+    const open = isFrom ? showFrom : showTo;
+    function handleOpen(e){
+      e.stopPropagation();
+      if(isFrom){ setShowTo(false); setShowFrom(function(o){return !o;}); }
+      else       { setShowFrom(false); setShowTo(function(o){return !o;}); }
+    }
+    function handleClose(){ setShowFrom(false); setShowTo(false); }
     return(
-      <div style={{flex:1,position:"relative"}}>
-        <FL>{lbl}</FL>
-        <button onClick={()=>{setOpen(o=>!o); setShowFrom(false); setShowTo(false); setTimeout(()=>setOpen(o=>!o),0);}}
-          onPointerDown={e=>{e.stopPropagation();}}
-          style={{width:"100%",padding:"11px 12px",borderRadius:12,
-            border:`1.5px solid ${open?C.amber:C.border}`,
+      React.createElement("div",{style:{flex:1,position:"relative"}},
+        React.createElement(FL,null,isFrom?"De":"A"),
+        React.createElement("button",{
+          onPointerDown:handleOpen,
+          style:{width:"100%",padding:"11px 12px",borderRadius:12,
+            border:"1.5px solid "+(open?C.amber:C.border),
             background:C.field,color:C.ink1,fontSize:14,fontWeight:700,
             textAlign:"left",cursor:"pointer",display:"flex",
-            justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{color:value==="infrac"?C.amber:C.ink1}}>
-            {CONV_UNITS.find(u=>u.id===value)?.short}
-          </span>
-          <span style={{color:C.ink3,fontSize:12}}>{open?"▲":"▼"}</span>
-        </button>
-        {open&&(
-          <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,
-            background:C.white,borderRadius:12,border:`1.5px solid ${C.amber}`,
-            zIndex:100,boxShadow:"0 8px 28px rgba(0,0,0,0.14)",overflow:"hidden"}}>
-            {CONV_UNITS.map(u=>(
-              <button key={u.id}
-                onPointerDown={e=>{e.preventDefault();onChange(u.id);setOpen(false);clearAll();}}
-                style={{width:"100%",padding:"13px 16px",
-                  background:value===u.id?`${C.amber}18`:C.white,
-                  border:"none",borderBottom:`1px solid ${C.border}`,
-                  textAlign:"left",fontSize:14,
-                  fontWeight:value===u.id?700:500,
-                  color:value===u.id?C.amber:C.ink2,cursor:"pointer"}}>
-                {u.label}
-                {u.id==="infrac"&&<span style={{marginLeft:8,fontSize:11,
-                  color:C.green,fontWeight:700}}>✦ Nuevo</span>}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+            justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("span",{style:{color:value==="infrac"?C.amber:C.ink1}},
+            (CONV_UNITS.find(function(u){return u.id===value;})||{short:value}).short),
+          React.createElement("span",{style:{color:C.ink3,fontSize:11}},open?"▲":"▼")
+        ),
+        open&&React.createElement("div",{
+          style:{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,
+            background:C.white,borderRadius:12,
+            border:"1.5px solid "+C.amber,zIndex:100,
+            boxShadow:"0 8px 28px rgba(0,0,0,0.14)",overflow:"hidden"}},
+          CONV_UNITS.map(function(u){
+            return React.createElement("button",{
+              key:u.id,
+              onPointerDown:function(e){
+                e.preventDefault(); onChange(u.id); handleClose(); clearAll();
+              },
+              style:{width:"100%",padding:"13px 16px",
+                background:value===u.id?C.amber+"18":C.white,
+                border:"none",borderBottom:"1px solid "+C.border,
+                textAlign:"left",fontSize:14,
+                fontWeight:value===u.id?700:500,
+                color:value===u.id?C.amber:C.ink2,cursor:"pointer"}},
+              u.label,
+              u.id==="infrac"&&React.createElement("span",
+                {style:{marginLeft:8,fontSize:11,color:C.green,fontWeight:700}},"✦")
+            );
+          })
+        )
+      )
     );
   }
 
@@ -495,142 +505,142 @@ function CombinedConverter(){
 
   return(
     <div style={{display:"flex",flexDirection:"column",
-      height:"calc(100vh - 215px)",gap:8,userSelect:"none",WebkitUserSelect:"none"}}>
+      height:"calc(100vh - 215px)",gap:8,
+      userSelect:"none",WebkitUserSelect:"none"}}>
 
-      {/* ── PANTALLA FIJA 148px -- NUNCA CRECE ── */}
       <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",
         borderRadius:18,padding:"12px 14px",flexShrink:0,height:148}}>
         <div style={{display:"flex",gap:10,height:"100%"}}>
-
-          {/* Izq -- lo que escribes */}
-          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div style={{flex:1,minWidth:0,display:"flex",
+            flexDirection:"column",justifyContent:"space-between"}}>
             <div style={{fontSize:10,color:"#555",fontWeight:700,
               letterSpacing:.8,textTransform:"uppercase"}}>
-              {CONV_UNITS.find(u=>u.id===fromU)?.label}
+              {(CONV_UNITS.find(function(u){return u.id===fromU;})||{label:"Entrada"}).label}
             </div>
-            <div style={{fontSize:28,fontWeight:900,color:C.white,fontFamily:"monospace",
-              letterSpacing:-.5,lineHeight:1,
+            <div style={{fontSize:28,fontWeight:900,color:C.white,
+              fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,
               whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               {inputDisplay()}
             </div>
-            <div style={{fontSize:10,color:"#555",fontFamily:"monospace",minHeight:14}}>
-              {hasInput&&isFrac&&`${fmt(inputInches,4)}" = ${fmt(cvt(inputInches,"in","mm"),2)}mm`}
-              {hasInput&&fromU==="in"&&buf&&toFrac(parseFloat(buf)||0,16)}
+            <div style={{fontSize:10,color:"#666",fontFamily:"monospace",minHeight:14}}>
+              {hasInput&&fmt(totalIn,4)+'" = '+fmt(cvt(totalIn,"in","mm"),2)+" mm"}
             </div>
           </div>
-
           <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
-
-          {/* Der -- resultado */}
-          <div style={{width:118,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
+          <div style={{width:118,flexShrink:0,display:"flex",
+            flexDirection:"column",gap:5}}>
             <div style={{fontSize:10,color:"#555",fontWeight:700,
               letterSpacing:.8,textTransform:"uppercase"}}>
-              {CONV_UNITS.find(u=>u.id===toU)?.label}
+              {(CONV_UNITS.find(function(u){return u.id===toU;})||{label:"Resultado"}).label}
             </div>
             <div style={{flex:1,
-              background:hasInput?`linear-gradient(135deg,${C.amber},#9A6005)`:"rgba(255,255,255,0.05)",
+              background:hasInput
+                ?"linear-gradient(135deg,"+C.amber+",#9A6005)"
+                :"rgba(255,255,255,0.05)",
               borderRadius:12,padding:"8px",textAlign:"center",
               display:"flex",flexDirection:"column",justifyContent:"center",
               transition:"background .2s"}}>
-              <div style={{fontSize:toU==="infrac"?15:22,fontWeight:900,
+              <div style={{fontSize:toU==="infrac"?14:22,fontWeight:900,
                 color:hasInput?C.white:"#333",
-                letterSpacing:-.5,lineHeight:1.2,fontFamily:"monospace",
-                wordBreak:"break-word"}}>
+                letterSpacing:-.5,lineHeight:1.2,
+                fontFamily:"monospace",wordBreak:"break-word"}}>
                 {hasInput?getResult():"--"}
               </div>
             </div>
+            {fracN>0&&(
+              <div style={{background:C.amber+"20",borderRadius:8,
+                padding:"3px 6px",textAlign:"center",
+                border:"1px solid "+C.amberBd}}>
+                <span style={{fontSize:10,color:C.amber,
+                  fontWeight:700,fontFamily:"monospace"}}>
+                  {(function(){const g=gcd(fracN,16);return "+"+fracN/g+"/"+16/g+'"';})()}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── SELECTORES DE UNIDAD ── */}
       <div style={{display:"flex",gap:8,alignItems:"flex-start",
         flexShrink:0,position:"relative",zIndex:50}}>
-        <UPick value={fromU} onChange={v=>{setFromU(v);clearAll();}}
-          open={showFrom}
-          setOpen={v=>{ setShowTo(false); setShowFrom(v); }}
-          lbl="De"/>
-        <button onPointerDown={e=>{e.preventDefault();swapUnits();}}
+        <UPick value={fromU} onChange={setFromSel} isFrom={true}/>
+        <button
+          onPointerDown={function(e){e.preventDefault(); swapUnits();}}
           style={{width:42,height:42,borderRadius:12,background:C.amber,
             border:"none",fontSize:18,color:C.white,fontWeight:700,
-            flexShrink:0,marginTop:22,boxShadow:`0 3px 10px ${C.amber}55`,cursor:"pointer"}}>⇄</button>
-        <UPick value={toU} onChange={v=>{setToU(v);}}
-          open={showTo}
-          setOpen={v=>{ setShowFrom(false); setShowTo(v); }}
-          lbl="A"/>
+            flexShrink:0,marginTop:22,
+            boxShadow:"0 3px 10px "+C.amber+"55",cursor:"pointer"}}>
+          {"\u21c4"}
+        </button>
+        <UPick value={toU} onChange={setToU} isFrom={false}/>
       </div>
 
-      {/* ── TECLADO ÚNICO -- siempre igual, flex:1 ── */}
       <div style={{flex:1,background:"#EDEAE5",borderRadius:18,padding:"8px",
         display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden"}}
-        onPointerDown={()=>{ setShowFrom(false); setShowTo(false); }}>
+        onPointerDown={function(){setShowFrom(false); setShowTo(false);}}>
 
-        {/* Fila 1: 7 8 9 ⌫ */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["7","8","9"].map(d=>(
-            <KB2 key={d} label={d} onPress={()=>digit(d)} style={{height:"100%",fontSize:20}}/>
-          ))}
-          <KB2 label="⌫" onPress={backspace} bg="#D4CEC7" color={C.ink2} style={{height:"100%",fontSize:18}}/>
+          {["7","8","9"].map(function(d){return(
+            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+              style={{height:"100%",fontSize:20}}/>
+          );})}
+          <KB2 label={"\u232b"} onPress={backspace}
+            bg="#D4CEC7" color={C.ink2} style={{height:"100%",fontSize:18}}/>
         </div>
 
-        {/* Fila 2: 4 5 6 / */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["4","5","6"].map(d=>(
-            <KB2 key={d} label={d} onPress={()=>digit(d)} style={{height:"100%",fontSize:20}}/>
-          ))}
+          {["4","5","6"].map(function(d){return(
+            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+              style={{height:"100%",fontSize:20}}/>
+          );})}
           <KB2 label="/" onPress={pressSlash}
             bg={slashOn?C.amber:"#D4CEC7"}
             color={slashOn?C.white:C.amber}
-            style={{height:"100%",fontSize:22,fontWeight:900,
-              boxShadow:slashOn?`0 3px 10px ${C.amber}44`:"none"}}/>
+            style={{height:"100%",fontSize:22,fontWeight:900}}/>
         </div>
 
-        {/* Fila 3: 1 2 3 C */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {["1","2","3"].map(d=>(
-            <KB2 key={d} label={d} onPress={()=>digit(d)} style={{height:"100%",fontSize:20}}/>
-          ))}
+          {["1","2","3"].map(function(d){return(
+            <KB2 key={d} label={d} onPress={function(){digit(d);}}
+              style={{height:"100%",fontSize:20}}/>
+          );})}
           <KB2 label="C" onPress={clearAll}
-            bg={`${C.red}15`} color={C.red}
-            style={{height:"100%",border:`1.5px solid ${C.red}33`}}/>
+            bg={C.red+"15"} color={C.red}
+            style={{height:"100%",border:"1.5px solid "+C.red+"33"}}/>
         </div>
 
-        {/* Fila 4: ft  in"  .  0 */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
           <KB2 label="ft" onPress={confirmFt}
-            bg={C.amber} color={C.white}
-            style={{height:"100%",fontSize:16,letterSpacing:.5}}/>
+            bg={C.amber} color={C.white} style={{height:"100%",fontSize:16}}/>
           <KB2 label='in "' onPress={confirmIn}
-            bg={C.amber} color={C.white}
-            style={{height:"100%",fontSize:15}}/>
+            bg={C.amber} color={C.white} style={{height:"100%",fontSize:14}}/>
           <KB2 label="." onPress={pressDecimal}
-            bg={isFrac?"#D4CEC7":C.white}
-            color={isFrac?C.ink4:C.ink1}
+            bg={carpMode?"#D4CEC7":C.white}
+            color={carpMode?C.ink4:C.ink1}
             style={{height:"100%",fontSize:20}}/>
-          <KB2 label="0" onPress={()=>digit("0")} style={{height:"100%",fontSize:20}}/>
+          <KB2 label="0" onPress={function(){digit("0");}}
+            style={{height:"100%",fontSize:20}}/>
         </div>
 
-        {/* Fila 5: fracciones rápidas ¼ ½ ¾ + fracción activa */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          {[[4,"¼"],[8,"½"],[12,"¾"],[2,"⅛"]].map(([n16,lbl])=>(
-            <KB2 key={lbl} label={lbl} onPress={()=>addFrac(n16)}
-              bg={`${C.amber}18`} color={C.amber}
-              style={{height:"100%",fontSize:18,
-                border:`1px solid ${C.amberBd}`,
-                boxShadow:fracN===n16?`0 2px 8px ${C.amber}33`:"none"}}/>
-          ))}
+          {[[1,"\u00b9\u2044\u2081\u2086"],[2,"\u215b"],[4,"\u00bc"],[8,"\u00bd"]].map(function(pair){
+            const n16=pair[0], lbl=pair[1];
+            return(
+              <KB2 key={n16} label={lbl} onPress={function(){addFrac(n16);}}
+                bg={C.amber+"18"} color={C.amber}
+                style={{height:"100%",fontSize:n16===1?12:18,
+                  border:"1px solid "+C.amberBd}}/>
+            );
+          })}
         </div>
 
-        {/* Indicador fracción acumulada */}
-        {(fracN>0||slashOn)&&(
-          <div style={{flexShrink:0,background:`${C.amber}15`,borderRadius:10,
-            padding:"5px 10px",textAlign:"center",
-            border:`1px solid ${C.amberBd}`}}>
-            <span style={{fontSize:12,color:C.amber,fontWeight:700,fontFamily:"monospace"}}>
-              {slashOn
-                ?`Fracción: ${fracNum||"?"}/${fracDen||"_"}" -- presiona in" para confirmar`
-                :`+${(()=>{const g=gcd(fracN,16);return `${fracN/g}/${16/g}"`;})()}`
-              }
+        {slashOn&&(
+          <div style={{flexShrink:0,background:C.amber+"15",
+            borderRadius:10,padding:"5px 10px",textAlign:"center",
+            border:"1px solid "+C.amberBd}}>
+            <span style={{fontSize:12,color:C.amber,fontWeight:700,
+              fontFamily:"monospace"}}>
+              {fracNum+"/"+(fracDen||"_")+'" \u2014 presiona in" para confirmar'}
             </span>
           </div>
         )}
@@ -639,10 +649,9 @@ function CombinedConverter(){
   );
 }
 
-// Botón del teclado del conversor
 function KB2({label,onPress,bg,color,style:st}){
   return(
-    <button onPointerDown={e=>{e.preventDefault();onPress();}}
+    <button onPointerDown={function(e){e.preventDefault();onPress();}}
       style={{borderRadius:11,border:"none",cursor:"pointer",fontWeight:800,
         lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
         display:"flex",alignItems:"center",justifyContent:"center",
@@ -653,6 +662,7 @@ function KB2({label,onPress,bg,color,style:st}){
     </button>
   );
 }
+
 
 // ── MODO TALLER -- Calculadora de construcción completa ───────
 // Todo en pantalla fija, sin scroll, sin teclado del sistema

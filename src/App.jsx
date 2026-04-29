@@ -255,16 +255,16 @@ export default function App(){
         {tab==="pro"       &&<ProTab catalog={catalog} projects={projects}/>}
       </div>
 
-      {/* NAV INFERIOR */}
-      <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:tab==="pro"?"#111120":C.white,borderTop:`1px solid ${tab==="pro"?"rgba(255,255,255,0.08)":C.border}`,display:"flex",zIndex:30,paddingBottom:"env(safe-area-inset-bottom,8px)",boxShadow:"0 -3px 20px rgba(0,0,0,0.08)",transition:"background .3s"}}>
+      {/* NAV INFERIOR — más grande y fácil de tocar */}
+      <nav style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:tab==="pro"?"#111120":C.white,borderTop:`1px solid ${tab==="pro"?"rgba(255,255,255,0.08)":C.border}`,display:"flex",zIndex:30,paddingBottom:"env(safe-area-inset-bottom,10px)",boxShadow:"0 -4px 24px rgba(0,0,0,0.10)",transition:"background .3s"}}>
         {TABS.map(t=>{
           const on=tab===t.id;
           const isPro=t.id==="pro";
           return(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",padding:"10px 2px 6px",background:"transparent",border:"none",gap:3}}>
-              <span style={{fontSize:isPro?20:22,lineHeight:1,opacity:on?1:.45,color:isPro&&on?C.proGold:"inherit"}}>{t.icon}</span>
-              <span style={{fontSize:10,fontWeight:700,color:on?(isPro?C.proGold:C.amber):tab==="pro"?"#444":C.ink3,letterSpacing:.1}}>{t.label}</span>
-              {on&&<div style={{width:22,height:3,borderRadius:2,background:isPro?C.proGold:C.amber,marginTop:1}}/>}
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",padding:"12px 4px 8px",background:"transparent",border:"none",gap:4,minHeight:62}}>
+              <span style={{fontSize:isPro?24:26,lineHeight:1,opacity:on?1:.4,color:isPro&&on?C.proGold:"inherit"}}>{t.icon}</span>
+              <span style={{fontSize:11,fontWeight:700,color:on?(isPro?C.proGold:C.amber):tab==="pro"?"#444":C.ink3,letterSpacing:.1}}>{t.label}</span>
+              {on&&<div style={{width:24,height:3,borderRadius:2,background:isPro?C.proGold:C.amber}}/>}
             </button>
           );
         })}
@@ -293,152 +293,284 @@ function CalcTab(){
   );
 }
 
-// ── CONVERSOR COMBINADO: Unidades + Fracciones ───────────────
+// ── CONVERSOR UNIFICADO con teclado propio ──────────────────
+// Unidades extendidas incluyendo fracción de pulgada
+const CONV_UNITS = [
+  { id:"mm",    label:"Milímetros",        short:"mm"  },
+  { id:"cm",    label:"Centímetros",       short:"cm"  },
+  { id:"m",     label:"Metros",            short:"m"   },
+  { id:"in",    label:'Pulgadas (decimal)',short:'in"' },
+  { id:"infrac",label:'Pulgadas (fracción)',short:"in½"},
+  { id:"ft",    label:"Pies",              short:"ft"  },
+  { id:"yd",    label:"Yardas",            short:"yd"  },
+];
+
 function CombinedConverter(){
-  const[sub,setSub]=useState("units");
-  // Unidades
-  const[val,setVal]=useState("");
-  const[from,setFrom]=useState("in");
-  const[to,setTo]=useState("mm");
-  const num=parseFloat(val);
-  const res=!isNaN(num)&&val!==""?cvt(num,from,to):null;
-  function swap(){setFrom(to);setTo(from);if(res!==null)setVal(fmt(res));}
-  // Decimal → Fracción
-  const[dec,setDec]=useState("0.625");
-  const[den,setDen]=useState(16);
-  const decV=parseFloat(dec)||0;
-  // Fracción → Decimal
-  const[fw,setFw]=useState(0);
-  const[fn,setFn]=useState(5);
-  const[fd,setFd]=useState(8);
-  const fracV=fw+fn/(fd||1);
+  const[fromU, setFromU] = useState("in");
+  const[toU,   setToU]   = useState("mm");
+  const[showFrom,setShowFrom] = useState(false);
+  const[showTo,  setShowTo]   = useState(false);
+
+  // Buffer numérico
+  const[buf,    setBuf]   = useState("");
+  const[ftAcc,  setFtAcc] = useState(0);
+  const[inAcc,  setInAcc] = useState(0);
+  const[fracN,  setFracN] = useState(0);
+  const[slashOn,setSlash] = useState(false);
+  const[fracNum,setFracNum]= useState("");
+  const[fracDen,setFracDen]= useState("");
+
+  // ── Valor en pulgadas decimales ──────────────────────────
+  function getInputInches(){
+    if(fromU==="infrac") return ftAcc*12 + inAcc + fracN/16;
+    const n = parseFloat(buf)||0;
+    return cvt(n, fromU==="in"?fromU:fromU, "in");
+  }
+  const inputInches = getInputInches();
+  const hasInput = fromU==="infrac" ? inputInches>0 : (buf!==""&&parseFloat(buf)!==0);
+
+  // ── Resultado ────────────────────────────────────────────
+  function getResult(){
+    const inches = inputInches;
+    if(toU==="infrac"){
+      const total = inches;
+      const ft = Math.floor(total/12);
+      const rem = total%12;
+      const inW = Math.floor(rem);
+      const frac = Math.round((rem-inW)*16);
+      const g = frac>0?gcd(frac,16):1;
+      let s = "";
+      if(ft>0) s+=`${ft} ft `;
+      if(inW>0||frac>0){
+        s+=inW>0?`${inW}`:"";
+        if(frac>0) s+=(inW>0?" ":"")+`${frac/g}/${16/g}"`;
+        else s+='"';
+      }
+      return s||"0";
+    }
+    if(toU==="in") return fmt(cvt(inches,"in","in"),5)+'"';
+    return fmt(cvt(inches,"in",toU),5)+" "+CONV_UNITS.find(u=>u.id===toU)?.short;
+  }
+
+  // ── Display del valor ingresado ──────────────────────────
+  function inputDisplay(){
+    if(fromU==="infrac"){
+      const parts=[];
+      if(ftAcc>0) parts.push(`${ftAcc} ft`);
+      if(inAcc>0||fracN>0){
+        let s=inAcc>0?`${inAcc}`:"";
+        if(fracN>0){const g=gcd(fracN,16);s+=(s?" ":"")+`${fracN/g}/${16/g}"`;}
+        else s+='"';
+        parts.push(s);
+      }
+      if(slashOn) return (fracNum||"?")+"/"+( fracDen||"_")+'"';
+      return parts.length?parts.join(" "):"0";
+    }
+    return buf||"0";
+  }
+
+  // ── Teclado — dígito ─────────────────────────────────────
+  function digit(d){
+    if(fromU==="infrac"){
+      if(slashOn) setFracDen(v=>(v+d).slice(0,3));
+      else setBuf(v=>(v==="0"?"":v+d).slice(0,6));
+    } else {
+      setBuf(v=>(v+d).replace(/^0+(?=\d)/,"").slice(0,8));
+    }
+  }
+
+  // ── Confirmar ft / in ────────────────────────────────────
+  function confirmFt(){
+    const n=parseFloat(buf)||0;
+    if(n>0)setFtAcc(n);
+    setBuf(""); setSlash(false); setFracDen(""); setFracNum("");
+  }
+  function confirmIn(){
+    if(slashOn){
+      const n=parseFloat(fracNum)||0,d=parseFloat(fracDen)||16;
+      setFracN(v=>v+Math.round((n/d)*16));
+      setSlash(false);setFracDen("");setFracNum("");setBuf("");
+    } else {
+      const n=parseFloat(buf)||0;
+      if(n>0)setInAcc(n);
+      setBuf("");setSlash(false);
+    }
+  }
+  function slash(){ setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true); }
+
+  function addFrac(n16){ setFracN(v=>v+n16); }
+  function backspace(){
+    if(fromU==="infrac"){
+      if(slashOn){setFracDen(v=>v.slice(0,-1));return;}
+      if(buf){setBuf(v=>v.slice(0,-1));return;}
+      if(fracN>0){setFracN(0);return;}
+      if(inAcc>0){setInAcc(0);return;}
+      if(ftAcc>0){setFtAcc(0);return;}
+    } else {
+      setBuf(v=>v.slice(0,-1));
+    }
+  }
+  function clearAll(){
+    setBuf(""); setFtAcc(0); setInAcc(0); setFracN(0);
+    setSlash(false); setFracDen(""); setFracNum("");
+  }
+  function swapUnits(){
+    setFromU(toU); setToU(fromU); clearAll();
+  }
+
+  // ── Selector de unidad ───────────────────────────────────
+  function UnitPicker({value, onChange, open, setOpen, label}){
+    return(
+      <div style={{flex:1,position:"relative"}}>
+        <FL>{label}</FL>
+        <button onClick={()=>setOpen(o=>!o)} style={{
+          width:"100%",padding:"11px 12px",borderRadius:12,
+          border:`1.5px solid ${open?C.amber:C.border}`,
+          background:C.field,color:C.ink1,fontSize:14,fontWeight:700,
+          textAlign:"left",cursor:"pointer",display:"flex",
+          justifyContent:"space-between",alignItems:"center",
+        }}>
+          <span>{CONV_UNITS.find(u=>u.id===value)?.short}</span>
+          <span style={{color:C.ink3,fontSize:12}}>{open?"▲":"▼"}</span>
+        </button>
+        {open&&(
+          <div style={{position:"absolute",top:"100%",left:0,right:0,background:C.white,
+            borderRadius:12,border:`1.5px solid ${C.amber}`,zIndex:50,
+            boxShadow:"0 8px 24px rgba(0,0,0,0.12)",overflow:"hidden",marginTop:4}}>
+            {CONV_UNITS.map(u=>(
+              <button key={u.id} onClick={()=>{onChange(u.id);setOpen(false);clearAll();}}
+                style={{width:"100%",padding:"12px 14px",background:value===u.id?`${C.amber}15`:C.white,
+                  border:"none",borderBottom:`1px solid ${C.border}`,textAlign:"left",
+                  fontSize:14,fontWeight:value===u.id?700:500,
+                  color:value===u.id?C.amber:C.ink2,cursor:"pointer"}}>
+                {u.label}
+                {u.id==="infrac"&&<span style={{marginLeft:8,fontSize:11,color:C.green,fontWeight:700}}>Nuevo ✦</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const isFracInput = fromU==="infrac";
+  const GAP = 5;
 
   return(
-    <div>
-      {/* Sub-selector */}
-      <div style={{display:"flex",gap:6,marginBottom:14}}>
-        {[["units","⇄ Unidades"],["dec2frac","0.625 → ½"],["frac2dec","½ → 0.625"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setSub(k)} style={{flex:1,padding:"9px 4px",borderRadius:10,border:`1.5px solid ${sub===k?C.amber:C.border}`,background:sub===k?`${C.amber}15`:"transparent",color:sub===k?C.amber:C.ink3,fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>
-        ))}
-      </div>
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 215px)",gap:8}}>
 
-      {/* ── UNIDADES ── */}
-      {sub==="units"&&(
-        <div>
-          <div style={K.card}>
-            <input type="number" inputMode="decimal" value={val} onChange={e=>setVal(e.target.value)} placeholder="Escribe un valor..."
-              style={{width:"100%",fontSize:36,fontWeight:900,letterSpacing:-1.5,padding:"12px 16px",borderRadius:12,border:`2px solid ${C.border}`,background:C.field,color:C.ink1,textAlign:"center",marginBottom:12}}/>
-            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
-              <div style={{flex:1}}><FL>De</FL><select value={from} onChange={e=>setFrom(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{UL[u]}</option>)}</select></div>
-              <button onClick={swap} style={{width:46,height:46,borderRadius:12,background:C.amber,border:"none",fontSize:20,color:C.white,fontWeight:700,flexShrink:0,boxShadow:`0 3px 12px ${C.amber}55`,cursor:"pointer"}}>⇄</button>
-              <div style={{flex:1}}><FL>A</FL><select value={to} onChange={e=>setTo(e.target.value)} style={K.sel}>{UNITS.map(u=><option key={u} value={u}>{UL[u]}</option>)}</select></div>
+      {/* ── PANTALLA FIJA ── */}
+      <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",borderRadius:18,
+        padding:"12px 14px",flexShrink:0,height:148}}>
+        <div style={{display:"flex",gap:10,height:"100%"}}>
+
+          {/* Izq — input */}
+          <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>
+              {CONV_UNITS.find(u=>u.id===fromU)?.label}
             </div>
-          </div>
-          <div style={{background:res!==null?`linear-gradient(135deg,${C.amber},#A06808)`:C.white,borderRadius:18,padding:"20px 22px",textAlign:"center",marginBottom:14,boxShadow:res!==null?`0 6px 24px ${C.amber}44`:"0 1px 5px rgba(0,0,0,0.06)",border:res!==null?"none":`1px solid ${C.border}`,minHeight:108,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            {res!==null?(
-              <>
-                <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginBottom:4}}>{val} {US[from]} =</div>
-                <div style={{fontSize:48,fontWeight:900,color:C.white,letterSpacing:-2,lineHeight:1}}>{fmt(res,5)}</div>
-                <div style={{fontSize:17,color:"rgba(255,255,255,.8)",marginTop:4}}>{UL[to]}</div>
-                {to==="in"&&<div style={{fontSize:13,color:"rgba(255,255,255,.75)",marginTop:6}}>≈ {toFrac(res,16)} · {toFrac(res,32)}</div>}
-                {from==="in"&&to==="mm"&&<div style={{fontSize:12,color:"rgba(255,255,255,.65)",marginTop:4}}>{fmt(res/25.4,6)}" decimal</div>}
-              </>
-            ):(
-              <div style={{fontSize:15,color:C.ink4}}>Escribe un número arriba</div>
+            <div style={{fontSize:28,fontWeight:900,color:C.white,fontFamily:"monospace",
+              letterSpacing:-.5,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {inputDisplay()}
+            </div>
+            {hasInput&&isFracInput&&(
+              <div style={{display:"flex",gap:8}}>
+                <span style={{fontSize:10,color:"#888",fontFamily:"monospace"}}>{fmt(inputInches,4)}"</span>
+                <span style={{fontSize:10,color:"#5B9BD5",fontFamily:"monospace"}}>{fmt(cvt(inputInches,"in","mm"),1)}mm</span>
+              </div>
+            )}
+            {hasInput&&!isFracInput&&(
+              <div style={{fontSize:10,color:"#666",fontFamily:"monospace"}}>
+                {fromU==="in"?toFrac(parseFloat(buf)||0,16):""}
+              </div>
             )}
           </div>
-          <div style={K.card}>
-            <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                <thead><tr><th style={K.th}></th>{["mm","cm","m","in","ft"].map(u=><th key={u} style={K.th}>{u}</th>)}</tr></thead>
-                <tbody>{["mm","cm","m","in","ft"].map(f=>(
-                  <tr key={f}>
-                    <td style={{...K.td,fontWeight:700,color:C.ink2,background:"#FAFAF8",fontSize:11}}>{f}</td>
-                    {["mm","cm","m","in","ft"].map(t=>(
-                      <td key={t} style={{...K.td,fontSize:11,...(f===t?{color:C.amber,fontWeight:700}:{})}} onClick={()=>{setVal("1");setFrom(f);setTo(t);}}>
-                        {f===t?"1":fmt(cvt(1,f,t),4)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-            <Hint>Toca una celda para cargarla arriba</Hint>
-          </div>
-        </div>
-      )}
 
-      {/* ── DECIMAL → FRACCIÓN ── */}
-      {sub==="dec2frac"&&(
-        <div>
-          <div style={K.card}>
-            <FL>Pulgadas en decimal</FL>
-            <input type="number" inputMode="decimal" value={dec} onChange={e=>setDec(e.target.value)} step=".001"
-              style={{width:"100%",fontSize:36,fontWeight:900,letterSpacing:-1.5,padding:"12px 16px",borderRadius:12,border:`2px solid ${C.border}`,background:C.field,color:C.ink1,textAlign:"center",marginBottom:14}}/>
-            <FL>Precisión</FL>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {[2,4,8,16,32,64].map(d2=>(
-                <button key={d2} onClick={()=>setDen(d2)} style={{flex:1,minWidth:46,padding:"10px 4px",borderRadius:10,border:`1.5px solid ${den===d2?C.amber:C.border}`,background:den===d2?`${C.amber}18`:"transparent",color:den===d2?C.amber:C.ink3,fontSize:13,fontWeight:700,cursor:"pointer"}}>1/{d2}</button>
-              ))}
+          <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
+
+          {/* Der — resultado */}
+          <div style={{width:120,flexShrink:0,display:"flex",flexDirection:"column",gap:5}}>
+            <div style={{fontSize:10,color:"#555",fontWeight:700,letterSpacing:.8,textTransform:"uppercase"}}>
+              {CONV_UNITS.find(u=>u.id===toU)?.label}
             </div>
-          </div>
-          <div style={{background:`linear-gradient(135deg,${C.amber},#A06808)`,borderRadius:18,padding:"22px",textAlign:"center",marginBottom:14,boxShadow:`0 6px 22px ${C.amber}44`}}>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginBottom:4}}>{dec}" =</div>
-            <div style={{fontSize:48,fontWeight:900,color:C.white,letterSpacing:-1,lineHeight:1}}>{toFrac(decV,den)}</div>
-            <div style={{fontSize:14,color:"rgba(255,255,255,.75)",marginTop:8}}>{(decV*25.4).toFixed(3)} mm · {(decV*2.54).toFixed(4)} cm</div>
-          </div>
-          <STitle>Tabla 1/64" — toca para cargar</STitle>
-          <div style={K.card}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,maxHeight:260,overflowY:"auto"}}>
-              {Array.from({length:64},(_,i)=>i+1).map(num=>{
-                const v=num/64,g=gcd(num,64),common=num%2===0;
-                return(
-                  <div key={num} onClick={()=>setDec(String(parseFloat(v.toFixed(6))))}
-                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 8px",borderRadius:6,cursor:"pointer",
-                      background:num===32?`${C.amber}18`:common?`${C.amber}08`:"transparent",
-                      borderLeft:`3px solid ${num===32?C.amber:common?C.amber+"44":"transparent"}`}}>
-                    <span style={{fontFamily:"monospace",fontSize:11,fontWeight:common?700:400,color:C.amber,minWidth:40}}>{num===64?`1"`:num/g+"/"+64/g+'"'}</span>
-                    <span style={{fontFamily:"monospace",fontSize:10,color:C.ink3}}>{v.toFixed(4)}"</span>
-                    <span style={{fontFamily:"monospace",fontSize:10,color:C.blue}}>{(v*25.4).toFixed(1)}mm</span>
+            <div style={{flex:1,background:hasInput?`linear-gradient(135deg,${C.amber},#9A6005)`:"rgba(255,255,255,0.05)",
+              borderRadius:12,padding:"8px",textAlign:"center",
+              display:"flex",flexDirection:"column",justifyContent:"center",
+              transition:"background .2s"}}>
+              {hasInput?(
+                <>
+                  <div style={{fontSize:toU==="infrac"?16:22,fontWeight:900,color:C.white,
+                    letterSpacing:-.5,lineHeight:1.1,fontFamily:"monospace",wordBreak:"break-all"}}>
+                    {getResult()}
                   </div>
-                );
-              })}
+                </>
+              ):(
+                <div style={{fontSize:11,color:"#333"}}>—</div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ── FRACCIÓN → DECIMAL ── */}
-      {sub==="frac2dec"&&(
-        <div>
-          <div style={K.card}>
-            <FL>Número entero (opcional)</FL>
-            <input type="number" inputMode="numeric" value={fw} onChange={e=>setFw(+e.target.value||0)} min={0}
-              style={{...K.inp,fontSize:22,fontWeight:700,textAlign:"center",marginBottom:16}}/>
-            <div style={{display:"flex",gap:10,alignItems:"flex-end"}}>
-              <div style={{flex:1}}><FL>Numerador</FL>
-                <input type="number" inputMode="numeric" value={fn} onChange={e=>setFn(+e.target.value||0)}
-                  style={{...K.inp,fontSize:28,fontWeight:800,textAlign:"center"}}/>
-              </div>
-              <span style={{fontSize:36,color:C.amber,paddingBottom:10,lineHeight:1,fontWeight:900}}>/</span>
-              <div style={{flex:1}}><FL>Denominador</FL>
-                <input type="number" inputMode="numeric" value={fd} onChange={e=>setFd(+e.target.value||1)}
-                  style={{...K.inp,fontSize:28,fontWeight:800,textAlign:"center"}}/>
-              </div>
-            </div>
+      {/* ── SELECTORES DE UNIDAD ── */}
+      <div style={{display:"flex",gap:8,alignItems:"flex-start",flexShrink:0,position:"relative",zIndex:40}}>
+        <UnitPicker value={fromU} onChange={setFromU} open={showFrom} setOpen={setShowFrom} label="De"/>
+        <button onClick={swapUnits} style={{width:42,height:42,borderRadius:12,background:C.amber,
+          border:"none",fontSize:18,color:C.white,fontWeight:700,flexShrink:0,marginTop:22,
+          boxShadow:`0 3px 10px ${C.amber}55`,cursor:"pointer"}}>⇄</button>
+        <UnitPicker value={toU} onChange={setToU} open={showTo} setOpen={setShowTo} label="A"/>
+      </div>
+
+      {/* ── TECLADO PROPIO — ocupa todo el resto ── */}
+      <div style={{flex:1,background:"#EDEAE5",borderRadius:18,padding:"8px",
+        display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden"}}>
+
+        {/* Fila fracción — solo si fromU es infrac */}
+        {isFracInput&&(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr 1fr",gap:GAP,flex:"0 0 auto"}}>
+            <KB2 label="ft"    onPress={confirmFt}    bg={C.amber}       color={C.white} style={{fontSize:14}}/>
+            <KB2 label='in "'  onPress={confirmIn}    bg={C.amber}       color={C.white} style={{fontSize:13}}/>
+            <KB2 label="/"     onPress={slash}        bg="#D4CEC7"       color={C.amber} style={{fontSize:18}}/>
+            <KB2 label="¼"    onPress={()=>addFrac(4)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:15,border:`1px solid ${C.amberBd}`}}/>
+            <KB2 label="½"    onPress={()=>addFrac(8)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:15,border:`1px solid ${C.amberBd}`}}/>
+            <KB2 label="¹⁄₁₆" onPress={()=>addFrac(1)} bg={`${C.amber}18`} color={C.amber} style={{fontSize:12,border:`1px solid ${C.amberBd}`}}/>
           </div>
-          <div style={{background:`linear-gradient(135deg,${C.amber},#A06808)`,borderRadius:18,padding:"22px",textAlign:"center",boxShadow:`0 6px 22px ${C.amber}44`}}>
-            <div style={{fontSize:13,color:"rgba(255,255,255,.7)",marginBottom:4}}>
-              {fw>0?`${fw} `:""}{fn}/{fd}" =
-            </div>
-            <div style={{fontSize:52,fontWeight:900,color:C.white,letterSpacing:-2,lineHeight:1}}>{fracV.toFixed(5)}"</div>
-            <div style={{fontSize:14,color:"rgba(255,255,255,.75)",marginTop:8}}>
-              {(fracV*25.4).toFixed(3)} mm · {(fracV*2.54).toFixed(4)} cm
-            </div>
+        )}
+
+        {/* Filas numéricas */}
+        {[["7","8","9"],["4","5","6"],["1","2","3"]].map(row=>(
+          <div key={row[0]} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP,flex:1}}>
+            {row.map(d=><KB2 key={d} label={d} onPress={()=>digit(d)} style={{height:"100%"}}/>)}
+            {row[0]==="7"&&<KB2 label="⌫" onPress={backspace} bg="#D4CEC7" color={C.ink2} style={{height:"100%"}}/>}
+            {row[0]==="4"&&<KB2 label={isFracInput?"¼":"."} onPress={isFracInput?()=>addFrac(4):()=>{if(!buf.includes("."))digit(".");}} bg={isFracInput?`${C.amber}18`:C.white} color={isFracInput?C.amber:C.ink1} style={{height:"100%",fontSize:isFracInput?16:18,border:isFracInput?`1px solid ${C.amberBd}`:"none"}}/>}
+            {row[0]==="1"&&<KB2 label={isFracInput?"½":"C"} onPress={isFracInput?()=>addFrac(8):clearAll} bg={isFracInput?`${C.amber}18`:`${C.red}15`} color={isFracInput?C.amber:C.red} style={{height:"100%",fontSize:isFracInput?16:15,border:isFracInput?`1px solid ${C.amberBd}`:`1.5px solid ${C.red}33`}}/>}
           </div>
+        ))}
+
+        {/* Última fila: . 0 C */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP,flex:1}}>
+          <KB2 label="." onPress={()=>{if(!isFracInput&&!buf.includes("."))digit(".");}} bg={isFracInput?"#D8D0C8":C.white} color={isFracInput?C.ink4:C.ink1} style={{height:"100%"}}/>
+          <KB2 label="0" onPress={()=>digit("0")} style={{height:"100%"}}/>
+          <KB2 label={isFracInput?"¾":""} onPress={isFracInput?()=>addFrac(12):()=>{}} bg={isFracInput?`${C.amber}18`:"transparent"} color={isFracInput?C.amber:C.white} style={{height:"100%",fontSize:16,border:isFracInput?`1px solid ${C.amberBd}`:"none"}}/>
+          <KB2 label="C" onPress={clearAll} bg={`${C.red}15`} color={C.red} style={{height:"100%",border:`1.5px solid ${C.red}33`}}/>
         </div>
-      )}
+      </div>
     </div>
+  );
+}
+
+// Botón del teclado del conversor
+function KB2({label,onPress,bg,color,style:st}){
+  return(
+    <button onPointerDown={e=>{e.preventDefault();onPress();}}
+      style={{borderRadius:11,border:"none",cursor:"pointer",fontWeight:800,
+        lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:17,background:bg||C.white,color:color||C.ink1,
+        boxShadow:"0 1px 3px rgba(0,0,0,0.09)",
+        transition:"opacity .1s",...(st||{})}}>
+      {label}
+    </button>
   );
 }
 

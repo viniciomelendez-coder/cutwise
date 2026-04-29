@@ -342,12 +342,15 @@ function CombinedConverter(){
       if(ftAcc>0) s+=ftAcc+" ft ";
       if(slashOn){
         s+=(inAcc>0?inAcc+" ":"")+fracNum+"/"+(fracDen||"_")+'"';
-      } else if(buf){
-        s+=buf;
-      } else if(inAcc>0||fracN>0){
-        s+=inAcc>0?String(inAcc):"";
-        if(fracN>0){const g=gcd(fracN,16);s+=(inAcc>0?" ":"")+fracN/g+"/"+16/g+'"';}
-        else s+='"';
+      } else {
+        // Mostrar pulgadas ya confirmadas
+        if(inAcc>0||fracN>0){
+          s+=inAcc>0?String(inAcc):"";
+          if(fracN>0){const g=gcd(fracN,16);s+=(inAcc>0?" ":"")+fracN/g+"/"+16/g+'"';}
+          else s+='"';
+        }
+        // Mostrar dígitos activos DESPUÉS de lo confirmado (no en lugar)
+        if(buf) s+=(s&&(inAcc>0||fracN>0)?" ":"")+buf;
       }
       return s||"0";
     }

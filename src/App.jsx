@@ -680,12 +680,12 @@ function WorkshopMode(){
   // Modo carpintero: usa ft/in/frac cuando fromU es in o ft
   const carpMode = fromU==="in" || fromU==="ft";
 
-  // ── Valor en pulgadas decimales ──────────────────────────
-  // Si modo carpintero: usa ftAcc+inAcc+frac
-  // Si otro modo: usa buf convertido desde fromU
+  // ── Valor en pulgadas decimales — incluye fracción pendiente ─
   const bufNum = parseFloat(buf)||0;
+  const fracPending = slashOn && fracDen
+    ? (parseFloat(fracNum)||0) / (parseFloat(fracDen)||1) : 0;
   const currentIn = carpMode
-    ? ftAcc*12 + inAcc + fracN/16
+    ? ftAcc*12 + inAcc + fracN/16 + fracPending
     : cvt(bufNum, fromU, "in");
 
   // ── Resultado convertido ──────────────────────────────────
@@ -769,6 +769,8 @@ function WorkshopMode(){
   }
 
   function slash(){
+    // Fix 1: activar modo pulgadas automáticamente al presionar /
+    if(fromU!=="in"&&fromU!=="ft") setFromU("in");
     setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true);
   }
 
@@ -782,7 +784,31 @@ function WorkshopMode(){
   }
 
   function pressOp(o){
-    const base=carpMode?currentIn:cvt(bufNum,fromU,"in");
+    // Auto-confirmar fracción pendiente antes de operar
+    if(slashOn && fracDen){
+      const n=parseFloat(fracNum)||0, d=parseFloat(fracDen)||16;
+      const n16=Math.round((n/d)*16);
+      const total=fracN+n16;
+      let newFracN=total, newInAcc=inAcc;
+      if(total>=16){newInAcc=inAcc+Math.floor(total/16);newFracN=total%16;}
+      // Usar valores confirmados
+      const base=(carpMode?(ftAcc*12+newInAcc+newFracN/16):cvt(bufNum,fromU,"in"));
+      if(base===0&&memory===0) return;
+      let newMem=memory;
+      if(op&&base>0){
+        if(op==="+") newMem=memory+base;
+        else if(op==="-") newMem=memory-base;
+        else if(op==="×") newMem=memory*base;
+        else if(op==="÷") newMem=base!==0?memory/base:memory;
+      } else { newMem=base>0?base:memory; }
+      const lbl=(fracNum||"?")+"/"+(fracDen||"?")+'"';
+      setTape(t=>[...t,{label:lbl,op:o,val:base}]);
+      setMemory(newMem); setOp(o);
+      setFtAcc(0);setInAcc(0);setFracN(0);
+      setBuf("");setSlash(false);setFracDen("");setFracNum("");setJustEq(false);
+      return;
+    }
+    const base=currentIn;
     if(base===0&&memory===0) return;
     let newMem=memory;
     if(op&&base>0){
@@ -792,27 +818,41 @@ function WorkshopMode(){
       else if(op==="÷") newMem=base!==0?memory/base:memory;
     } else { newMem=base>0?base:memory; }
     const lbl=numDisplay();
-    if(lbl!=="0") setTape(t=>[...t,{label:lbl+" "+US[fromU],op:o,val:base}]);
-    setMemory(newMem);
-    setOp(o);
+    if(lbl!=="0") setTape(t=>[...t,{label:lbl,op:o,val:base}]);
+    setMemory(newMem); setOp(o);
     setFtAcc(0);setInAcc(0);setFracN(0);
     setBuf("");setSlash(false);setFracDen("");setFracNum("");setJustEq(false);
   }
 
   function pressEqual(){
-    const res=calcResult();
-    setTape(t=>[...t,{label:numDisplay()+" "+US[fromU],op:"=",val:currentIn}]);
-    // Guardar resultado como entrada para siguiente operación
+    // Auto-confirmar fracción pendiente si existe
+    let baseIn=currentIn;
+    let dispLabel=numDisplay();
+    if(slashOn&&fracDen){
+      const n=parseFloat(fracNum)||0, d=parseFloat(fracDen)||16;
+      const n16=Math.round((n/d)*16);
+      const total=fracN+n16;
+      const finalFrac=total>=16?total%16:total;
+      const finalIn=inAcc+(total>=16?Math.floor(total/16):0);
+      baseIn=ftAcc*12+finalIn+finalFrac/16;
+      dispLabel=(fracNum||"?")+"/"+(fracDen||"?")+'"';
+    }
+    let res=baseIn;
+    if(op){
+      if(op==="+") res=memory+baseIn;
+      else if(op==="-") res=memory-baseIn;
+      else if(op==="×") res=memory*baseIn;
+      else if(op==="÷") res=baseIn!==0?memory/baseIn:memory;
+    }
+    setTape(t=>[...t,{label:dispLabel,op:"=",val:baseIn}]);
     if(carpMode){
       const ftR=Math.floor(res/12), inR=parseFloat((res%12).toFixed(6));
       setFtAcc(ftR);setInAcc(Math.floor(inR));setFracN(Math.round((inR%1)*16));
     } else {
-      // Convertir resultado de vuelta a fromU para mostrarlo
-      const backVal=cvt(res,"in",fromU);
-      setBuf(fmt(backVal,6));
+      setBuf(fmt(cvt(res,"in",fromU),6));
     }
     setMemory(0);setOp(null);
-    setSlash(false);setFracDen("");setFracNum("");setJustEq(true);
+    setSlash(false);setFracDen("");setFracNum("");setBuf(v=>carpMode?"":v);setJustEq(true);
   }
 
   function backspace(){
@@ -887,17 +927,22 @@ function WorkshopMode(){
           {/* Izquierda -- entrada */}
           <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
             <div>
-              {/* Cinta historial */}
-              <div style={{fontSize:10,color:"#555",fontFamily:"monospace",
-                minHeight:14,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {tape.slice(-2).map((t,i)=>(
-                  <span key={i}>{t.label} <span style={{color:C.amber}}>{t.op}</span>{" "}</span>
+              {/* Cinta historial — más grande */}
+              <div style={{fontSize:12,color:"#666",fontFamily:"monospace",
+                minHeight:18,whiteSpace:"nowrap",overflow:"hidden",
+                textOverflow:"ellipsis",letterSpacing:.2}}>
+                {tape.slice(-3).map((t,i)=>(
+                  <span key={i}>
+                    <span style={{color:"#888"}}>{t.label}</span>
+                    {" "}<span style={{color:C.amber,fontWeight:800}}>{t.op}</span>{" "}
+                  </span>
                 ))}
               </div>
               {/* Operación pendiente */}
-              <div style={{fontSize:11,color:C.amber,fontWeight:700,minHeight:16}}>{op||""}</div>
-              {/* Número actual */}
-              <div style={{fontSize:28,fontWeight:900,color:C.white,
+              <div style={{fontSize:13,color:C.amber,fontWeight:800,minHeight:18,
+                fontFamily:"monospace"}}>{op||""}</div>
+              {/* Número actual — más grande */}
+              <div style={{fontSize:32,fontWeight:900,color:C.white,
                 fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,
                 whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 {numDisplay()}

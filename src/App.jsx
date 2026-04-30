@@ -661,76 +661,51 @@ function KB2({label,onPress,bg,color,style:st}){
 }
 
 
-// ── MODO TALLER -- Calculadora profesional de construcción ────
+// ── MODO TALLER -- Calculadora profesional ────────────────────
+// Máquina de estado clásica: prevVal + operator + curVal
+// Capa de unidades ENCIMA de la calculadora, no en lugar de ella
 function WorkshopMode(){
-  // ── Estado principal ─────────────────────────────────────
-  const[buf,     setBuf]    = useState("");   // dígitos activos
-  const[memory,  setMemory] = useState(null); // operando izquierdo (null = vacío)
-  const[op,      setOp]     = useState(null); // operador pendiente
-  const[expr,    setExpr]   = useState([]);   // expresión completa para display
-  const[fromU,   setFromU]  = useState("in"); // unidad de entrada
-  const[toU,     setToU]    = useState("mm"); // unidad de salida
-  const[justEq,  setJustEq] = useState(false);
-  // Modo fracción carpintero
-  const[ftAcc,   setFtAcc]  = useState(0);
-  const[inAcc,   setInAcc]  = useState(0);
-  const[fracN,   setFracN]  = useState(0);
-  const[slashOn, setSlash]  = useState(false);
+
+  // ── CAPA 1: Calculadora pura ─────────────────────────────
+  const[display, setDisplay] = useState("0");    // lo que se ve en pantalla
+  const[prevVal, setPrevVal] = useState(null);   // operando izquierdo
+  const[operator,setOperator]= useState(null);   // + - × ÷
+  const[waitNext,setWaitNext]= useState(false);  // después de op, próximo digit limpia
+  const[exprStr, setExprStr] = useState("");     // "1 + 1" para mostrar arriba
+  const[result,  setResult]  = useState(null);   // último resultado calculado
+  const[divZero, setDivZero] = useState(false);  // división por cero
+
+  // ── CAPA 2: Unidades (opcional, no bloquea) ───────────────
+  const[unitMode,setUnitMode]= useState(false);  // ¿activo?
+  const[fromU,   setFromU]   = useState("in");   // unidad de entrada
+  const[toU,     setToU]     = useState("mm");   // unidad de salida
+
+  // ── CAPA 3: Modo carpintero ft/in/frac ────────────────────
+  const[ftAcc,   setFtAcc]   = useState(0);
+  const[inAcc,   setInAcc]   = useState(0);
+  const[fracN,   setFracN]   = useState(0);
+  const[slashOn, setSlash]   = useState(false);
   const[fracNum, setFracNum] = useState("");
   const[fracDen, setFracDen] = useState("");
+  const carpMode = fromU==="in"||fromU==="ft";
 
-  // Modo carpintero: ft/in/frac disponibles
-  const carpMode = fromU==="in" || fromU==="ft";
-
-  // ── Valor actual del buffer en pulgadas ──────────────────
-  const bufNum = parseFloat(buf)||0;
-  const fracPend = slashOn&&fracDen
-    ?(parseFloat(fracNum)||0)/(parseFloat(fracDen)||1):0;
-  const currentIn = carpMode
-    ? ftAcc*12 + inAcc + fracN/16 + fracPend
-    : cvt(bufNum, fromU, "in");
-
-  // ── Calcular resultado ───────────────────────────────────
-  function doMath(left, oper, right){
-    if(oper==="+") return left+right;
-    if(oper==="-") return left-right;
-    if(oper==="×") return left*right;
-    if(oper==="÷") return right!==0?left/right:left;
-    return right;
-  }
-
-  // Resultado para mostrar: si hay operación pendiente -> calcula en vivo
-  const liveResult = memory!==null && op
-    ? doMath(memory, op, currentIn)
-    : currentIn;
-  const hasVal = liveResult!==0 || memory!==null;
-  const resInTarget = cvt(liveResult,"in",toU);
-
-  // ── Display del número actual ────────────────────────────
-  function numDisplay(){
+  // ── Valor numérico del display actual ────────────────────
+  function getDisplayVal(){
     if(carpMode){
-      if(slashOn) return `${fracNum}/${fracDen||"_"}"`;
-      if(buf) return buf;
-      const parts=[];
-      if(ftAcc>0) parts.push(`${ftAcc}ft`);
-      if(inAcc>0||fracN>0){
-        let s=inAcc>0?`${inAcc}`:"";
-        if(fracN>0){const g=gcd(fracN,16);s+=(s?" ":"")+`${fracN/g}/${16/g}"`;}
-        else s+='"';
-        parts.push(s);
-      }
-      return parts.length?parts.join(" "):(buf||"0");
+      const fp=slashOn&&fracDen
+        ?(parseFloat(fracNum)||0)/(parseFloat(fracDen)||1):0;
+      return ftAcc*12+inAcc+fracN/16+fp;
     }
-    return buf||"0";
+    return parseFloat(display)||0;
   }
 
-  // Display de la expresión: "1 + 1" o "3/4 + 3/4"
-  function exprDisplay(){
-    if(!expr.length) return "";
-    return expr.map(e=>`${e.label}${e.op?" "+e.op:""}`).join(" ");
-  }
+  // ── Resultado numérico final (en pulgadas si unidad activa)
+  const numResult = result!==null ? result : getDisplayVal();
+  // Para conversión: si unit mode, convierte; si no, el número es puro
+  const inchesVal = unitMode ? cvt(numResult,fromU,"in") : numResult;
+  const hasResult = result!==null||(display!=="0"&&display!=="");
 
-  // ── Display fracción resultado imperial ─────────────────
+  // ── Display fracción para imperiales ─────────────────────
   function fmtImperial(inches){
     if(isNaN(inches)||inches<=0) return "";
     const ft=Math.floor(inches/12), rem=inches%12;
@@ -744,65 +719,182 @@ function WorkshopMode(){
       if(fFr>0) s+=(fIn>0?" ":"")+fFr/g+"/"+16/g+'"';
       else s+='"';
     }
-    return s||"0";
+    return s||"";
   }
 
-  // ── Obtener valor actual listo para operar ───────────────
-  function getCurrentVal(){
-    if(slashOn&&fracDen){
-      const n=parseFloat(fracNum)||0, d=parseFloat(fracDen)||16;
-      const n16=Math.round((n/d)*16);
-      const total=fracN+n16;
-      const fFr=total>=16?total%16:total;
-      const fIn=inAcc+(total>=16?Math.floor(total/16):0);
-      return ftAcc*12+fIn+fFr/16;
+  // ── Display del número actual (modo carpintero o normal) ──
+  function carpDisplay(){
+    if(slashOn) return `${fracNum}/${fracDen||"_"}"`;
+    const parts=[];
+    if(ftAcc>0) parts.push(`${ftAcc}ft`);
+    if(inAcc>0||fracN>0){
+      let s=inAcc>0?`${inAcc}`:"";
+      if(fracN>0){const g=gcd(fracN,16);s+=(s?" ":"")+`${fracN/g}/${16/g}"`;}
+      else s+='"';
+      parts.push(s);
     }
-    return currentIn;
+    if(parts.length) return parts.join(" ");
+    return display||"0";
   }
 
-  function getCurrentLabel(){
-    if(slashOn&&fracDen) return `${fracNum}/${fracDen}"`;
-    return numDisplay();
-  }
+  const mainDisplay = carpMode ? carpDisplay() : display;
 
-  // ── Dígito ───────────────────────────────────────────────
-  function digit(d){
-    if(justEq){ clearAll(); setJustEq(false); }
+  // ── DÍGITO ────────────────────────────────────────────────
+  function pressDigit(d){
+    setDivZero(false);
     if(slashOn){ setFracDen(v=>(v+d).slice(0,3)); return; }
-    if(carpMode) setBuf(v=>(v==="0"?"":v+d).slice(0,8));
-    else         setBuf(v=>v===""||v==="0"?d==="."?"0.":d:(v+d).slice(0,12));
+    if(carpMode){
+      if(waitNext){
+        setBuf_carp(); setWaitNext(false);
+      }
+      setDisplay(v=>(v==="0"||waitNext)? d : (v+d).slice(0,10));
+      return;
+    }
+    if(waitNext||display==="0"){
+      setDisplay(d==="."?"0.":d);
+      setWaitNext(false);
+    } else {
+      setDisplay(v=>(v+d).slice(0,12));
+    }
+    setResult(null);
   }
 
-  // ── ft / in ──────────────────────────────────────────────
+  function setBuf_carp(){
+    setFtAcc(0);setInAcc(0);setFracN(0);
+    setSlash(false);setFracDen("");setFracNum("");
+  }
+
+  // ── DECIMAL ───────────────────────────────────────────────
+  function pressDecimal(){
+    if(carpMode) return;
+    setDivZero(false);
+    if(waitNext){ setDisplay("0."); setWaitNext(false); return; }
+    if(!display.includes(".")) setDisplay(v=>v+".");
+    setResult(null);
+  }
+
+  // ── OPERADOR ─────────────────────────────────────────────
+  function pressOp(o){
+    setDivZero(false);
+    const cur = getDisplayVal();
+    // Si hay operación pendiente, calcula antes
+    if(prevVal!==null && operator && !waitNext){
+      const res = compute(prevVal, operator, cur);
+      if(res===null){ setDivZero(true); return; }
+      const resDisplay = carpMode
+        ? (()=>{const ft=Math.floor(res/12),rem=res%12,iW=Math.floor(rem),fr=Math.round((rem-iW)*16);
+            return fr>=16?`${ft?ft+"ft ":""}${iW+1}"`:`${ft?ft+"ft ":""}${iW?iW:""}${fr>0?" "+(()=>{const g=gcd(fr,16);return fr/g+"/"+16/g+'"';})():""}`.trim()||"0";})()
+        : fmtNum(res);
+      setExprStr(v=>v+` ${mainDisplay} ${o}`);
+      setPrevVal(res);
+      setDisplay(resDisplay);
+    } else {
+      // Primer operando
+      setExprStr(mainDisplay+" "+o);
+      setPrevVal(cur);
+    }
+    setOperator(o);
+    setWaitNext(true);
+    setResult(null);
+    // En modo carpintero, limpiar acumuladores para el próximo número
+    if(carpMode){ setFtAcc(0);setInAcc(0);setFracN(0);setSlash(false);setFracDen("");setFracNum(""); }
+  }
+
+  // ── IGUAL ─────────────────────────────────────────────────
+  function pressEqual(){
+    setDivZero(false);
+    const cur = getDisplayVal();
+    if(prevVal===null){
+      // Sin operación, solo muestra el valor actual como resultado
+      setResult(cur); setExprStr(""); setWaitNext(false); return;
+    }
+    const res = compute(prevVal, operator, cur);
+    if(res===null){ setDivZero(true); setResult(null); return; }
+    const resDisplay = carpMode
+      ? (()=>{const ft=Math.floor(res/12),rem=res%12,iW=Math.floor(rem),fr=Math.round((rem-iW)*16);
+          const fIn=fr>=16?iW+1:iW, fFr=fr>=16?0:fr;
+          const g=fFr>0?gcd(fFr,16):1;
+          let s=""; if(ft>0)s+=ft+"ft ";
+          if(fIn>0||fFr>0){s+=fIn>0?fIn:"";if(fFr>0)s+=(fIn>0?" ":"")+fFr/g+"/"+16/g+'"';else s+='"';}
+          return s||"0";})()
+      : fmtNum(res);
+    setExprStr(`${exprStr} ${mainDisplay} =`);
+    setDisplay(resDisplay);
+    setResult(res);
+    setPrevVal(null); setOperator(null); setWaitNext(false);
+    if(carpMode){
+      const ft=Math.floor(res/12),rem=res%12,iW=Math.floor(rem),fr=Math.round((rem-iW)*16);
+      const fIn=fr>=16?iW+1:iW, fFr=fr>=16?0:fr;
+      setFtAcc(ft); setInAcc(fIn); setFracN(fFr);
+      setSlash(false);setFracDen("");setFracNum("");
+    }
+  }
+
+  // ── COMPUTE (safe) ────────────────────────────────────────
+  function compute(left, op, right){
+    if(op==="+") return left+right;
+    if(op==="-") return left-right;
+    if(op==="×") return left*right;
+    if(op==="÷") return right===0?null:left/right;
+    return right;
+  }
+
+  // ── FORMAT número para display (sin trailing ceros feos) ──
+  function fmtNum(n){
+    if(isNaN(n)||n===null) return "0";
+    const s=parseFloat(n.toFixed(10)).toString();
+    return s.length>12?parseFloat(n.toPrecision(8)).toString():s;
+  }
+
+  // ── BACKSPACE ─────────────────────────────────────────────
+  function pressBack(){
+    setDivZero(false);
+    if(slashOn&&fracDen){setFracDen(v=>v.slice(0,-1));return;}
+    if(slashOn){setSlash(false);setFracDen("");setFracNum("");return;}
+    if(carpMode){
+      if(fracN>0){setFracN(0);return;}
+      if(inAcc>0){setInAcc(0);return;}
+      if(ftAcc>0){setFtAcc(0);return;}
+    }
+    if(display.length>1) setDisplay(v=>v.slice(0,-1));
+    else setDisplay("0");
+    setResult(null);
+  }
+
+  // ── CLEAR ─────────────────────────────────────────────────
+  function pressClear(){
+    setDisplay("0"); setPrevVal(null); setOperator(null);
+    setWaitNext(false); setExprStr(""); setResult(null); setDivZero(false);
+    setFtAcc(0);setInAcc(0);setFracN(0);
+    setSlash(false);setFracDen("");setFracNum("");
+  }
+
+  // ── CARPINTERO: ft / in" / slash / fracciones ─────────────
   function confirmFt(){
-    const n=parseFloat(buf)||0;
+    const n=parseFloat(display)||0;
     if(n>0) setFtAcc(v=>v+n);
-    setBuf(""); setSlash(false); setFracDen(""); setFracNum(""); setJustEq(false);
+    setDisplay("0"); setWaitNext(false); setResult(null);
   }
-
   function confirmIn(){
     if(slashOn){
-      const n=parseFloat(fracNum)||0, d=parseFloat(fracDen)||16;
+      const n=parseFloat(fracNum)||0,d=parseFloat(fracDen)||16;
       const n16=Math.round((n/d)*16);
       const total=fracN+n16;
       if(total>=16){setInAcc(v=>v+Math.floor(total/16));setFracN(total%16);}
       else setFracN(total);
-      setSlash(false); setFracDen(""); setFracNum(""); setBuf("");
+      setSlash(false);setFracDen("");setFracNum("");setDisplay("0");
     } else {
-      const n=parseFloat(buf)||0;
+      const n=parseFloat(display)||0;
       if(n>0) setInAcc(v=>v+n);
-      setBuf(""); setSlash(false);
+      setDisplay("0"); setSlash(false);
     }
-    setJustEq(false);
+    setResult(null);
   }
-
-  // ── Slash → fracción ─────────────────────────────────────
-  function slash(){
+  function slashFrac(){
     if(fromU!=="in"&&fromU!=="ft") setFromU("in");
-    setFracNum(buf||"1"); setBuf(""); setFracDen(""); setSlash(true);
+    setFracNum(display==="0"?"1":display);
+    setDisplay("0"); setFracDen(""); setSlash(true);
   }
-
-  // ── Fracciones rápidas ───────────────────────────────────
   function addFrac(n16){
     if(fromU!=="in"&&fromU!=="ft") setFromU("in");
     setFracN(v=>{
@@ -810,70 +902,26 @@ function WorkshopMode(){
       if(total>=16){setInAcc(i=>i+Math.floor(total/16));return total%16;}
       return total;
     });
-    setJustEq(false);
+    setResult(null);
   }
 
-  // ── Operación ────────────────────────────────────────────
-  function pressOp(o){
-    const val=getCurrentVal();
-    const lbl=getCurrentLabel();
-    if(val===0&&memory===null) return; // nada que operar
-    // Si ya hay operación pendiente, calcula primero
-    const newMem = (memory!==null&&op) ? doMath(memory,op,val) : val;
-    setExpr(e=>[...e,{label:lbl,op:o}]);
-    setMemory(newMem);
-    setOp(o);
-    // Limpiar entrada
-    setBuf(""); setFtAcc(0); setInAcc(0); setFracN(0);
-    setSlash(false); setFracDen(""); setFracNum(""); setJustEq(false);
-  }
+  // ── Todas las conversiones en vivo ────────────────────────
+  const finalInches = unitMode ? inchesVal : cvt(numResult,"in","in");
+  const allConv = unitMode ? UNITS.filter(u=>u!==fromU).map(u=>{
+    const r=cvt(finalInches,"in",u);
+    return{unit:u,val:r,label:UL[u],short:US[u],
+      frac:(u==="in"||u==="ft")&&r>0?fmtImperial(u==="ft"?r*12:r):""};
+  }) : [];
 
-  // ── Igual ─────────────────────────────────────────────────
-  function pressEqual(){
-    const val=getCurrentVal();
-    const lbl=getCurrentLabel();
-    const res=(memory!==null&&op)?doMath(memory,op,val):val;
-    // Mostrar expresión completa con resultado
-    setExpr([{label:[...expr,{label:lbl}].map(e=>e.label).join(" "+op+" "),op:"="}]);
-    // Guardar resultado como nuevo valor
-    if(carpMode){
-      const ftR=Math.floor(res/12), inR=parseFloat((res%12).toFixed(6));
-      setFtAcc(ftR); setInAcc(Math.floor(inR)); setFracN(Math.round((inR%1)*16));
-      setBuf("");
-    } else {
-      setBuf(fmt(cvt(res,"in",fromU),6));
-      setFtAcc(0); setInAcc(0); setFracN(0);
-    }
-    setMemory(null); setOp(null);
-    setSlash(false); setFracDen(""); setFracNum(""); setJustEq(true);
-  }
+  const resInTarget = unitMode ? cvt(finalInches,"in",toU) : numResult;
 
-  // ── Borrar / Limpiar ─────────────────────────────────────
-  function backspace(){
-    if(slashOn&&fracDen){setFracDen(v=>v.slice(0,-1));return;}
-    if(slashOn){setSlash(false);setFracDen("");setFracNum("");return;}
-    if(buf){setBuf(v=>v.slice(0,-1));return;}
-    if(fracN>0){setFracN(0);return;}
-    if(inAcc>0){setInAcc(0);return;}
-    if(ftAcc>0){setFtAcc(0);return;}
-  }
-
-  function clearAll(){
-    setBuf(""); setFtAcc(0); setInAcc(0); setFracN(0);
-    setSlash(false); setFracDen(""); setFracNum("");
-    setMemory(null); setOp(null); setExpr([]); setJustEq(false);
-  }
-
-  function swapUnits(){ setFromU(toU); setToU(fromU); clearAll(); }
-
-  // ── Botón ─────────────────────────────────────────────────
   function KB({label,onPress,bg,color,style:st}){
     return(
       <button onPointerDown={e=>{e.preventDefault();onPress();}}
         style={{borderRadius:12,border:"none",cursor:"pointer",fontWeight:800,
           lineHeight:1,userSelect:"none",WebkitUserSelect:"none",
           display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:16,height:46,
+          fontSize:18,height:46,
           background:bg||C.white,color:color||C.ink1,
           boxShadow:"0 1px 3px rgba(0,0,0,0.1)",
           transition:"opacity .1s",...(st||{})}}>
@@ -882,123 +930,101 @@ function WorkshopMode(){
     );
   }
 
-  // Todas las conversiones en vivo
-  const allResults = UNITS.filter(u=>u!==fromU).map(u=>{
-    const r=cvt(liveResult,"in",u);
-    return {unit:u,val:r,label:UL[u],short:US[u],
-      frac:(u==="in"||u==="ft")&&r>0?fmtImperial(u==="ft"?r*12:r):""};
-  });
-
   const GAP=5;
-  const curLabel=numDisplay();
-  const hasInput=curLabel!=="0"||memory!==null;
+  const opColor="#8B6340";
 
   return(
     <div style={{userSelect:"none",WebkitUserSelect:"none",
       display:"flex",flexDirection:"column",
       height:"calc(100vh - 200px)",gap:8}}>
 
-      {/* ══ PANTALLA FIJA 168px ═══════════════════════════════ */}
+      {/* ══ PANTALLA ═════════════════════════════════════════ */}
       <div style={{background:"linear-gradient(160deg,#1A1A1C,#252528)",
-        borderRadius:18,padding:"12px 14px",flexShrink:0,height:168}}>
-        <div style={{display:"flex",gap:10,height:"100%"}}>
+        borderRadius:18,padding:"14px 16px",flexShrink:0,minHeight:140}}>
 
-          {/* Izquierda */}
-          <div style={{flex:1,minWidth:0,display:"flex",
-            flexDirection:"column",justifyContent:"space-between"}}>
-            <div>
-              {/* Expresión construida */}
-              <div style={{fontSize:11,color:"#888",fontFamily:"monospace",
-                minHeight:16,whiteSpace:"nowrap",overflow:"hidden",
-                textOverflow:"ellipsis",letterSpacing:.2}}>
-                {exprDisplay()||
-                  <span style={{color:"#444",fontStyle:"italic"}}>
-                    Escribe un número y presiona + − × ÷
-                  </span>
-                }
-              </div>
-              {/* Operación pendiente */}
-              <div style={{fontSize:14,color:C.amber,fontWeight:900,
-                minHeight:20,fontFamily:"monospace",letterSpacing:.5}}>
-                {op?op+" ...":""}
-              </div>
-              {/* Número actual — grande */}
-              <div style={{fontSize:34,fontWeight:900,color:C.white,
-                fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,
-                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {curLabel}
-              </div>
-            </div>
-            {/* Info unidad y decimal */}
-            <div style={{fontSize:10,color:"#666",fontFamily:"monospace"}}>
-              {UL[fromU]}
-              {carpMode&&currentIn>0&&
-                <span style={{color:"#777",marginLeft:6}}>= {fmt(currentIn,4)}"</span>}
-            </div>
+        {/* Expresión en vivo — arriba */}
+        <div style={{fontSize:12,color:"#666",fontFamily:"monospace",
+          minHeight:18,textAlign:"right",whiteSpace:"nowrap",
+          overflow:"hidden",textOverflow:"ellipsis",marginBottom:4}}>
+          {exprStr||
+            <span style={{color:"#383838",fontStyle:"italic",fontSize:11}}>
+              Escribe un número · ej: 1 + 1
+            </span>
+          }
+        </div>
+
+        {/* Número principal — grande, alineado a la derecha */}
+        <div style={{fontSize:divZero?18:36,fontWeight:900,
+          color:divZero?"#E05252":C.white,
+          fontFamily:"monospace",letterSpacing:-.5,lineHeight:1,
+          textAlign:"right",minHeight:42,
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {divZero?"÷ cero":mainDisplay}
+        </div>
+
+        {/* Info: operador activo + unidad */}
+        <div style={{display:"flex",justifyContent:"space-between",
+          alignItems:"center",marginTop:6}}>
+          <div style={{fontSize:12,color:C.amber,fontWeight:700,minHeight:16,fontFamily:"monospace"}}>
+            {operator?`${operator} ...`:""}
           </div>
-
-          <div style={{width:1,background:"rgba(255,255,255,0.08)",flexShrink:0}}/>
-
-          {/* Derecha — resultado */}
-          <div style={{width:118,flexShrink:0,display:"flex",
-            flexDirection:"column",gap:5}}>
-            <select value={toU} onChange={e=>setToU(e.target.value)}
-              style={{background:"rgba(255,255,255,0.1)",
-                border:"1px solid rgba(255,255,255,0.15)",
-                borderRadius:8,padding:"5px 6px",color:C.white,fontSize:11,
-                fontWeight:700,outline:"none",cursor:"pointer",width:"100%"}}>
-              {UNITS.map(u=>(
-                <option key={u} value={u} style={{background:"#1A1A1C"}}>{UL[u]}</option>
-              ))}
-            </select>
-            <div style={{flex:1,
-              background:hasInput
-                ?`linear-gradient(135deg,${C.amber},#9A6005)`
-                :"rgba(255,255,255,0.05)",
-              borderRadius:12,padding:"8px",textAlign:"center",
-              display:"flex",flexDirection:"column",justifyContent:"center",
-              transition:"background .25s"}}>
-              {hasInput?(
-                <>
-                  <div style={{fontSize:20,fontWeight:900,color:C.white,
-                    fontFamily:"monospace",lineHeight:1,wordBreak:"break-all"}}>
-                    {isNaN(resInTarget)?"-":fmt(resInTarget,4)}
-                  </div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:2}}>
-                    {US[toU]}
-                  </div>
-                  {(toU==="in"||toU==="ft")&&resInTarget>0&&(
-                    <div style={{fontSize:10,color:"rgba(255,255,255,.55)",
-                      marginTop:3,fontFamily:"monospace"}}>
-                      ≈ {fmtImperial(toU==="ft"?resInTarget*12:resInTarget)}
-                    </div>
-                  )}
-                </>
-              ):(
-                <div style={{fontSize:12,color:"#444"}}>--</div>
-              )}
-            </div>
+          <div style={{fontSize:10,color:"#555",fontFamily:"monospace"}}>
+            {unitMode?UL[fromU]:"sin unidad"}
+            {unitMode&&carpMode&&getDisplayVal()>0&&
+              <span style={{marginLeft:6,color:"#777"}}>{fmt(getDisplayVal(),4)}"</span>}
           </div>
         </div>
+
+        {/* Resultado convertido — solo si unit mode */}
+        {unitMode&&hasResult&&(
+          <div style={{marginTop:8,padding:"8px 10px",
+            background:`linear-gradient(135deg,${C.amber},#9A6005)`,
+            borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:11,color:"rgba(255,255,255,.7)",fontWeight:600}}>
+              {UL[toU]}
+            </span>
+            <span style={{fontSize:18,fontWeight:900,color:C.white,fontFamily:"monospace"}}>
+              {isNaN(resInTarget)?"-":fmt(resInTarget,5)} {US[toU]}
+              {(toU==="in"||toU==="ft")&&resInTarget>0&&
+                <span style={{fontSize:11,color:"rgba(255,255,255,.65)",marginLeft:6}}>
+                  ≈ {fmtImperial(toU==="ft"?resInTarget*12:resInTarget)}
+                </span>
+              }
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* ── SELECTOR UNIDAD ENTRADA + SWAP ─────────────────── */}
-      <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
-        <div style={{flex:1}}>
-          <FL>Unidad de entrada</FL>
-          <select value={fromU}
-            onChange={e=>{setFromU(e.target.value);clearAll();}}
-            style={{...K.sel,fontSize:14}}>
-            {UNITS.map(u=>(
-              <option key={u} value={u}>{UL[u]} ({US[u]})</option>
-            ))}
-          </select>
+      {/* ── MODO UNIDADES (opcional) ──────────────────────── */}
+      <div style={{flexShrink:0,background:C.white,borderRadius:14,
+        padding:"10px 14px",border:`1px solid ${C.border}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:unitMode?10:0}}>
+          <button
+            onPointerDown={e=>{e.preventDefault();setUnitMode(v=>!v);}}
+            style={{padding:"6px 14px",borderRadius:20,border:`1.5px solid ${unitMode?C.amber:C.border}`,
+              background:unitMode?`${C.amber}18`:"transparent",
+              color:unitMode?C.amber:C.ink3,fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            {unitMode?"✓ Unidades ON":"+ Activar unidades"}
+          </button>
+          {unitMode&&<span style={{fontSize:11,color:C.ink3}}>Resultado en {UL[fromU]}</span>}
         </div>
-        <button onPointerDown={e=>{e.preventDefault();swapUnits();}}
-          style={{width:44,height:44,borderRadius:12,background:C.amber,
-            border:"none",fontSize:18,color:C.white,fontWeight:700,
-            flexShrink:0,marginTop:20,
-            boxShadow:`0 3px 10px ${C.amber}55`,cursor:"pointer"}}>⇄</button>
+        {unitMode&&(
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <select value={fromU} onChange={e=>{setFromU(e.target.value);pressClear();}}
+              style={{...K.sel,flex:1,fontSize:13}}>
+              {UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}
+            </select>
+            <button onPointerDown={e=>{e.preventDefault();
+              const tmp=fromU;setFromU(toU);setToU(tmp);pressClear();}}
+              style={{width:38,height:38,borderRadius:10,background:C.amber,
+                border:"none",color:C.white,fontSize:16,fontWeight:700,
+                cursor:"pointer",flexShrink:0}}>⇄</button>
+            <select value={toU} onChange={e=>setToU(e.target.value)}
+              style={{...K.sel,flex:1,fontSize:13}}>
+              {UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* ══ TECLADO ═══════════════════════════════════════════ */}
@@ -1006,98 +1032,88 @@ function WorkshopMode(){
         display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden",
         boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}>
 
-        {/* Fila carpintero: ft in" / ⌫ C */}
-        {carpMode&&(
-          <div style={{display:"grid",
-            gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:GAP,flexShrink:0}}>
-            <KB label="ft"   onPress={confirmFt} bg={C.amber} color={C.white} style={{fontSize:13}}/>
-            <KB label='in "' onPress={confirmIn} bg={C.amber} color={C.white} style={{fontSize:12}}/>
-            <KB label="/"    onPress={slash}     bg="#D4CEC7" color={C.amber} style={{fontSize:20}}/>
-            <KB label="⌫"   onPress={backspace}  bg="#D4CEC7" color={C.ink2}/>
-            <KB label="C"    onPress={clearAll}   bg={`${C.red}15`} color={C.red}
-              style={{border:`1.5px solid ${C.red}33`}}/>
+        {/* Fila carpintero: ft in" / ⌫ C — solo si unitMode carpintero */}
+        {unitMode&&carpMode&&(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",
+            gap:GAP,flexShrink:0}}>
+            <KB label="ft"   onPress={confirmFt}  bg={C.amber} color={C.white} style={{fontSize:13,height:42}}/>
+            <KB label='in "' onPress={confirmIn}  bg={C.amber} color={C.white} style={{fontSize:12,height:42}}/>
+            <KB label="/"    onPress={slashFrac}  bg="#D4CEC7" color={C.amber} style={{fontSize:20,height:42}}/>
+            <KB label="⌫"   onPress={pressBack}   bg="#D4CEC7" color={C.ink2}  style={{height:42}}/>
+            <KB label="C"    onPress={pressClear}  bg={`${C.red}15`} color={C.red}
+              style={{border:`1.5px solid ${C.red}33`,height:42}}/>
           </div>
         )}
-
-        {/* Fracciones rápidas — solo carpintero */}
-        {carpMode&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",
-            gap:GAP,flexShrink:0}}>
+        {/* Fracciones rápidas */}
+        {unitMode&&carpMode&&(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:GAP,flexShrink:0}}>
             {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"]].map(([n16,lbl])=>(
               <KB key={n16} label={lbl} onPress={()=>addFrac(n16)}
                 bg={`${C.amber}18`} color={C.amber}
-                style={{fontSize:lbl==="¹⁄₁₆"?11:15,border:`1px solid ${C.amberBd}`}}/>
+                style={{fontSize:lbl==="¹⁄₁₆"?11:15,height:40,border:`1px solid ${C.amberBd}`}}/>
             ))}
           </div>
         )}
 
-        {/* Filas numéricas 7-8-9 ÷ / 4-5-6 × / 1-2-3 − */}
-        {[["7","8","9","÷"],["4","5","6","×"],["1","2","3","−"]].map(([a,b,c,oper])=>{
-          const opKey=oper==="−"?"-":oper;
-          return(
-            <div key={a} style={{flex:1,display:"grid",
-              gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-              {[a,b,c].map(d=>(
-                <KB key={d} label={d} onPress={()=>digit(d)} style={{height:"100%",fontSize:20}}/>
-              ))}
-              <KB label={oper} onPress={()=>pressOp(opKey)}
-                bg={op===opKey?"#7A5528":C.white}
-                color={op===opKey?C.white:"#8B6340"}
-                style={{height:"100%",fontSize:22}}/>
-            </div>
-          );
-        })}
-
-        {/* Fila final: . 0 = + (y ⌫ C si no carpintero) */}
-        <div style={{flex:1,display:"grid",
-          gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
-          <KB label="." onPress={()=>{if(!buf.includes("."))digit(".");}}
-            style={{height:"100%",fontSize:20}}/>
-          <KB label="0" onPress={()=>digit("0")} style={{height:"100%",fontSize:20}}/>
-          {!carpMode&&(
-            <KB label="⌫" onPress={backspace} bg="#D4CEC7" color={C.ink2}
-              style={{height:"100%",fontSize:18}}/>
-          )}
-          {!carpMode&&(
-            <KB label="C" onPress={clearAll} bg={`${C.red}15`} color={C.red}
-              style={{height:"100%",border:`1.5px solid ${C.red}33`}}/>
-          )}
-          {carpMode&&(
-            <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white}
-              style={{height:"100%",fontSize:22,boxShadow:`0 3px 14px ${C.amber}55`}}/>
-          )}
-          {carpMode&&(
-            <KB label="+" onPress={()=>pressOp("+")}
-              bg={op==="+"?"#7A5528":C.white}
-              color={op==="+"?C.white:"#8B6340"}
-              style={{height:"100%",fontSize:22}}/>
-          )}
+        {/* Fila: 7 8 9 ÷ */}
+        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+          {["7","8","9"].map(d=>(
+            <KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>
+          ))}
+          <KB label="÷" onPress={()=>pressOp("÷")}
+            bg={operator==="÷"?"#7A5528":C.white} color={operator==="÷"?C.white:opColor}
+            style={{height:"100%",fontSize:24}}/>
         </div>
-
-        {/* = y + para modo no carpintero */}
-        {!carpMode&&(
-          <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:GAP}}>
-            <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white}
-              style={{height:"100%",fontSize:22,boxShadow:`0 3px 14px ${C.amber}55`}}/>
-            <KB label="+" onPress={()=>pressOp("+")}
-              bg={op==="+"?"#7A5528":C.white}
-              color={op==="+"?C.white:"#8B6340"}
-              style={{height:"100%",fontSize:22}}/>
+        {/* Fila: 4 5 6 × */}
+        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+          {["4","5","6"].map(d=>(
+            <KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>
+          ))}
+          <KB label="×" onPress={()=>pressOp("×")}
+            bg={operator==="×"?"#7A5528":C.white} color={operator==="×"?C.white:opColor}
+            style={{height:"100%",fontSize:24}}/>
+        </div>
+        {/* Fila: 1 2 3 − */}
+        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+          {["1","2","3"].map(d=>(
+            <KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>
+          ))}
+          <KB label="−" onPress={()=>pressOp("-")}
+            bg={operator==="-"?"#7A5528":C.white} color={operator==="-"?C.white:opColor}
+            style={{height:"100%",fontSize:24}}/>
+        </div>
+        {/* Fila: . 0 = + */}
+        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
+          <KB label="." onPress={pressDecimal} style={{height:"100%",fontSize:22}}/>
+          <KB label="0" onPress={()=>pressDigit("0")} style={{height:"100%",fontSize:22}}/>
+          <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white}
+            style={{height:"100%",fontSize:24,boxShadow:`0 3px 14px ${C.amber}55`}}/>
+          <KB label="+" onPress={()=>pressOp("+")}
+            bg={operator==="+"?"#7A5528":C.white} color={operator==="+"?C.white:opColor}
+            style={{height:"100%",fontSize:24}}/>
+        </div>
+        {/* Fila: ⌫ C (siempre visibles en modo no-carpintero) */}
+        {(!unitMode||!carpMode)&&(
+          <div style={{flex:"0 0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:GAP}}>
+            <KB label="⌫" onPress={pressBack} bg="#D4CEC7" color={C.ink2}
+              style={{height:44,fontSize:20}}/>
+            <KB label="C" onPress={pressClear} bg={`${C.red}15`} color={C.red}
+              style={{height:44,border:`1.5px solid ${C.red}33`}}/>
           </div>
         )}
       </div>
 
-      {/* ══ EQUIVALENCIAS EN VIVO ════════════════════════════ */}
-      {hasInput&&liveResult>0&&(
+      {/* ══ EQUIVALENCIAS (solo si unit mode activo y hay resultado) */}
+      {unitMode&&hasResult&&allConv.length>0&&(
         <div style={{flexShrink:0,background:C.white,borderRadius:14,
           padding:"10px 14px",border:`1px solid ${C.border}`,
           boxShadow:"0 1px 5px rgba(0,0,0,0.04)"}}>
           <div style={{fontSize:10,fontWeight:700,color:C.ink3,
             textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>
-            Equivalencias en vivo
+            Equivalencias — {fmt(numResult,6)} {US[fromU]}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-            {allResults.map(r=>(
+            {allConv.map(r=>(
               <div key={r.unit} style={{display:"flex",
                 justifyContent:"space-between",alignItems:"baseline",
                 padding:"4px 8px",borderRadius:8,
@@ -1110,9 +1126,7 @@ function WorkshopMode(){
                     {isNaN(r.val)?"-":fmt(r.val,4)} {r.short}
                   </span>
                   {r.frac&&(
-                    <div style={{fontSize:10,color:C.ink3,fontFamily:"monospace"}}>
-                      ≈ {r.frac}
-                    </div>
+                    <div style={{fontSize:10,color:C.ink3,fontFamily:"monospace"}}>≈ {r.frac}</div>
                   )}
                 </div>
               </div>

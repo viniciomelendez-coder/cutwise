@@ -906,103 +906,110 @@ function WorkshopMode(){
         )}
       </div>
 
+      {/* ── PANEL UNIDADES — altura fija siempre ─────────── */}
       <div style={{flexShrink:0,background:C.white,borderRadius:14,
-        padding:"8px 12px",border:"1px solid "+C.border}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:unitOn?8:0}}>
+        padding:"8px 12px",border:"1px solid "+C.border,
+        minHeight:44}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           <button onPointerDown={e=>{e.preventDefault();setUnitOn(v=>!v);}}
             style={{padding:"6px 14px",borderRadius:20,cursor:"pointer",fontSize:13,fontWeight:700,
               border:"1.5px solid "+(unitOn?C.amber:C.border),
               background:unitOn?C.amber+"18":"transparent",
-              color:unitOn?C.amber:C.ink3}}>
-            {unitOn?"✓ Unidades":"+ Activar unidades"}
+              color:unitOn?C.amber:C.ink3,flexShrink:0}}>
+            {unitOn?"✓ Unidades":"⇄ Unidades"}
           </button>
-          {unitOn&&<span style={{fontSize:11,color:C.ink3,flex:1}}>{UL[fromU]} {"→"} {UL[toU]}</span>}
-        </div>
-        {unitOn&&(
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {/* Selectores — siempre presentes, solo visibles si unitOn */}
+          <div style={{display:"flex",gap:4,flex:1,alignItems:"center",
+            opacity:unitOn?1:0,pointerEvents:unitOn?"auto":"none",transition:"opacity .2s"}}>
             <select value={fromU} onChange={e=>{setFromU(e.target.value);clearAll();}}
-              style={{...K.sel,flex:1,fontSize:13}}>
-              {UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}
+              style={{...K.sel,flex:1,fontSize:12,padding:"6px 8px"}}>
+              {UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}
             </select>
             <button onPointerDown={e=>{e.preventDefault();swapUnits();}}
-              style={{width:36,height:36,borderRadius:10,background:C.amber,border:"none",
-                color:C.white,fontSize:16,fontWeight:700,cursor:"pointer",flexShrink:0}}>{"⇄"}</button>
+              style={{width:30,height:30,borderRadius:8,background:C.amber,border:"none",
+                color:C.white,fontSize:14,fontWeight:700,cursor:"pointer",flexShrink:0}}>⇄</button>
             <select value={toU} onChange={e=>setToU(e.target.value)}
-              style={{...K.sel,flex:1,fontSize:13}}>
-              {UNITS.map(u=><option key={u} value={u}>{UL[u]} ({US[u]})</option>)}
+              style={{...K.sel,flex:1,fontSize:12,padding:"6px 8px"}}>
+              {UNITS.map(u=><option key={u} value={u}>{US[u]}</option>)}
             </select>
           </div>
-        )}
+        </div>
       </div>
 
+      {/* ══ TECLADO — layout 100% fijo, nada se mueve ════════ */}
       <div style={{flex:1,background:C.field,borderRadius:18,padding:"8px",
         display:"flex",flexDirection:"column",gap:GAP,overflow:"hidden",
         boxShadow:"0 2px 10px rgba(0,0,0,0.06)"}}>
 
-        {carpMode&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:GAP,flexShrink:0}}>
-            <KB label="ft"  onPress={confirmFt} bg={C.amber} color={C.white} style={{fontSize:13,height:42}}/>
-            <KB label='in"' onPress={confirmIn} bg={C.amber} color={C.white} style={{fontSize:12,height:42}}/>
-            <KB label="/"   onPress={slashFrac} bg="#D4CEC7" color={C.amber} style={{fontSize:20,height:42}}/>
-            <KB label={"⌫"} onPress={pressBack} bg="#D4CEC7" color={C.ink2} style={{height:42}}/>
-            <KB label="C"   onPress={clearAll}  bg={C.red+"15"} color={C.red} style={{height:42,border:"1.5px solid "+C.red+"33"}}/>
-          </div>
-        )}
-        {carpMode&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:GAP,flexShrink:0}}>
-            {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"]].map(([n,l])=>(
-              <KB key={n} label={l} onPress={()=>addFrac(n)}
-                bg={C.amber+"18"} color={C.amber}
-                style={{fontSize:n===1?11:15,height:40,border:"1px solid "+C.amberBd}}/>
-            ))}
-          </div>
-        )}
+        {/* Fila carpintero ft/in / ⌫ C — SIEMPRE ocupa espacio, cambia opacidad */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:GAP,
+          flexShrink:0,opacity:carpMode?1:0,pointerEvents:carpMode?"auto":"none",
+          transition:"opacity .2s"}}>
+          <KB label="ft"  onPress={confirmFt} bg={C.amber} color={C.white} style={{fontSize:13,height:40}}/>
+          <KB label='in"' onPress={confirmIn} bg={C.amber} color={C.white} style={{fontSize:12,height:40}}/>
+          <KB label="/"   onPress={slashFrac} bg="#D4CEC7" color={C.amber} style={{fontSize:20,height:40}}/>
+          <KB label="⌫"  onPress={pressBack}  bg="#D4CEC7" color={C.ink2}  style={{height:40}}/>
+          <KB label="C"   onPress={clearAll}   bg={C.red+"15"} color={C.red} style={{height:40,border:"1.5px solid "+C.red+"33"}}/>
+        </div>
 
+        {/* Fracciones rápidas — SIEMPRE ocupa espacio */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:GAP,
+          flexShrink:0,opacity:carpMode?1:0,pointerEvents:carpMode?"auto":"none",
+          transition:"opacity .2s"}}>
+          {[[1,"¹⁄₁₆"],[2,"⅛"],[4,"¼"],[8,"½"]].map(([n,l])=>(
+            <KB key={n} label={l} onPress={()=>addFrac(n)}
+              bg={C.amber+"18"} color={C.amber}
+              style={{fontSize:n===1?11:15,height:38,border:"1px solid "+C.amberBd}}/>
+          ))}
+        </div>
+
+        {/* 7 8 9 ÷ */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
           {["7","8","9"].map(d=><KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>)}
           <KB label="÷" onPress={()=>pressOp("÷")} bg={pendingOp==="÷"?"#7A5528":C.white} color={pendingOp==="÷"?C.white:OPC} style={{height:"100%",fontSize:24}}/>
         </div>
+        {/* 4 5 6 × */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
           {["4","5","6"].map(d=><KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>)}
           <KB label="×" onPress={()=>pressOp("×")} bg={pendingOp==="×"?"#7A5528":C.white} color={pendingOp==="×"?C.white:OPC} style={{height:"100%",fontSize:24}}/>
         </div>
+        {/* 1 2 3 − */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
           {["1","2","3"].map(d=><KB key={d} label={d} onPress={()=>pressDigit(d)} style={{height:"100%",fontSize:22}}/>)}
           <KB label="−" onPress={()=>pressOp("-")} bg={pendingOp==="-"?"#7A5528":C.white} color={pendingOp==="-"?C.white:OPC} style={{height:"100%",fontSize:24}}/>
         </div>
+        {/* . 0 = + */}
         <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:GAP}}>
           <KB label="." onPress={pressDot} style={{height:"100%",fontSize:22}}/>
           <KB label="0" onPress={()=>pressDigit("0")} style={{height:"100%",fontSize:22}}/>
           <KB label="=" onPress={pressEqual} bg={C.amber} color={C.white} style={{height:"100%",fontSize:24,boxShadow:"0 3px 14px "+C.amber+"55"}}/>
           <KB label="+" onPress={()=>pressOp("+")} bg={pendingOp==="+"?"#7A5528":C.white} color={pendingOp==="+"?C.white:OPC} style={{height:"100%",fontSize:24}}/>
         </div>
-        {!carpMode&&(
-          <div style={{flexShrink:0,display:"grid",gridTemplateColumns:"1fr 1fr",gap:GAP}}>
-            <KB label={"⌫"} onPress={pressBack} bg="#D4CEC7" color={C.ink2} style={{height:44,fontSize:20}}/>
-            <KB label="C" onPress={clearAll} bg={C.red+"15"} color={C.red} style={{height:44,border:"1.5px solid "+C.red+"33"}}/>
-          </div>
-        )}
+        {/* ⌫ C — siempre visibles (en carp mode son los de arriba, aquí de apoyo) */}
+        <div style={{flexShrink:0,display:"grid",gridTemplateColumns:"1fr 1fr",gap:GAP,
+          opacity:carpMode?0:1,pointerEvents:carpMode?"none":"auto",
+          transition:"opacity .2s",height:carpMode?0:44,overflow:"hidden"}}>
+          <KB label="⌫" onPress={pressBack} bg="#D4CEC7" color={C.ink2} style={{height:44,fontSize:20}}/>
+          <KB label="C"  onPress={clearAll}  bg={C.red+"15"} color={C.red} style={{height:44,border:"1.5px solid "+C.red+"33"}}/>
+        </div>
       </div>
 
+      {/* ══ EQUIVALENCIAS — dentro de la pantalla, no empuja nada */}
       {unitOn&&liveVal!==0&&allConv.length>0&&(
         <div style={{flexShrink:0,background:C.white,borderRadius:14,
-          padding:"10px 14px",border:"1px solid "+C.border}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.ink3,
-            textTransform:"uppercase",letterSpacing:.6,marginBottom:8}}>Equivalencias</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+          padding:"8px 12px",border:"1px solid "+C.border,maxHeight:120,overflow:"auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
             {allConv.map(r=>(
-              <div key={r.unit} style={{display:"flex",justifyContent:"space-between",
-                alignItems:"baseline",padding:"4px 8px",borderRadius:8,
+              <div key={r.unit} style={{display:"flex",flexDirection:"column",
+                padding:"3px 6px",borderRadius:6,
                 background:r.unit===toU?C.amber+"15":C.field,
                 border:"1px solid "+(r.unit===toU?C.amber:C.border)}}>
-                <span style={{fontSize:11,color:C.ink3,fontWeight:600}}>{r.label}</span>
-                <div style={{textAlign:"right"}}>
-                  <span style={{fontSize:13,fontWeight:700,
-                    color:r.unit===toU?C.amber:C.ink1,fontFamily:"monospace"}}>
-                    {isNaN(r.val)?"-":niceNum(r.val)} {r.short}
-                  </span>
-                  {r.frac&&<div style={{fontSize:10,color:C.ink3,fontFamily:"monospace"}}>{"≈"}{r.frac}</div>}
-                </div>
+                <span style={{fontSize:10,color:C.ink3,fontWeight:600}}>{r.short}</span>
+                <span style={{fontSize:12,fontWeight:700,
+                  color:r.unit===toU?C.amber:C.ink1,fontFamily:"monospace"}}>
+                  {isNaN(r.val)?"-":niceNum(r.val)}
+                </span>
+                {r.frac&&<span style={{fontSize:9,color:C.ink3,fontFamily:"monospace"}}>≈{r.frac}</span>}
               </div>
             ))}
           </div>
